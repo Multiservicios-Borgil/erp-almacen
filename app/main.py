@@ -1,7 +1,179 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, Header
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+from pydantic import BaseModel
+import datetime, uuid
+
+from .database import SessionLocal, engine
+from .models import Base, Item, Familia, TipoVenta, Venta, Evento
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+# ---------------- DB ----------------
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# ---------------- ROLES ----------------
+
+def verificar_roles_permitidos(*roles_permitidos):
+    def wrapper(x_rol: str = Header()):
+        if x_rol not in roles_permitidos:
+            raise HTTPException(status_code=403, detail="Permiso denegado")
+    return wrapper
+
+# ---------------- ESTADOS ----------------
+
+TRANSICIONES = {
+    "PENDIENTE_DIAGNOSTICO": ["FUNCIONA", "ESTROPEADO"],
+    "REGISTRADO": ["FUNCIONA", "ESTROPEADO"],
+    "FUNCIONA": ["PREPARADO_VENTA"],
+    "ESTROPEADO": ["REPARADO", "PARA_DESPIECE"],
+    "REPARADO": ["PREPARADO_VENTA"],
+    "PREPARADO_VENTA": ["VENDIDO"],
+    "PARA_DESPIECE": ["DESPIEZADO"],
+}
+
+# ---------------- CREAR ITEM ----------------
+
+class ItemCreate(BaseModel):
+    familia_id: int
+    sku_id: int
+    numero_serie: str
+    proveedor_id: int
+    fecha_compra: str
+    origen: str
+    motivo_retirada: str | None = None
+    diagnostico_inicial: str | None = None
+
+@app.post("/crear_item")
+def crear_item(
+    data: ItemCreate,
+    db: Session = Depends(get_db),
+    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN"))
+):
+
+    if data.origen == "RETIRADO_VIVIENDA" and not data.diagnostico_inicial:
+        raise HTTPException(status_code=400, detail="Diagnóstico obligatorio")
+
+    estado_inicial = "PENDIENTE_DIAGNOSTICO" if data.origen == "RETIRADO_VIVIENDA" else "REGISTRADO"
+
+    nuevo_id = f"{datetime.datetime.now().year}-{str(uuid.uuid4())[:6]}"
+
+    item = Item(
+        id=nuevo_id,
+        familia_id=data.familia_id,
+        sku_id=data.sku_id,
+        numero_serie=data.numero_serie,
+        proveedor_id=data.proveedor_id,
+        fecha_compra=datetime.datetime.strptime(data.fecha_compra, "%Y-%m-%d"),
+        estado_actual=estado_inicial,
+        origen=data.origen,
+        motivo_retirada=data.motivo_retirada,
+        diagnostico_inicial=data.diagnostico_inicial,
+    )
+
+    db.add(item)
+    db.commit()
+
+    return {"id": nuevo_id}
+
+# ---------------- CAMBIAR ESTADO ----------------
+
+class EstadoUpdate(BaseModel):
+    item_id: str
+    nuevo_estado: str
+
+@app.post("/cambiar_estado")
+def cambiar_estado(
+    data: EstadoUpdate,
+    db: Session = Depends(get_db),
+    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN"))
+):
+
+    item = db.query(Item).filter(Item.id == data.item_id).first()
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Item no encontrado")
+
+    if data.nuevo_estado not in TRANSICIONES.get(item.estado_actual, []):
+        raise HTTPException(status_code=400, detail="Transición no permitida")
+
+    estado_anterior = item.estado_actual
+    item.estado_actual = data.nuevo_estado
+
+    if data.nuevo_estado == "VENDIDO":
+        item.en_stock = False
+
+    evento = Evento(
+        item_id=item.id,
+        estado_anterior=estado_anterior,
+        estado_nuevo=data.nuevo_estado,
+        usuario="sistema"
+    )
+
+    db.add(evento)
+    db.commit()
+
+    return {"mensaje": "Estado actualizado"}
+
+# ---------------- REGISTRAR VENTA ----------------
+
+class RegistrarVenta(BaseModel):
+    item_id: str
+    tipo_venta_id: int
+    cliente: str
+    precio: float | None = None
+    garantia_meses: int | None = None
+    numero_factura: str | None = None
+
+@app.post("/registrar_venta")
+def registrar_venta(
+    data: RegistrarVenta,
+    db: Session = Depends(get_db),
+    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN"))
+):
+
+    item = db.query(Item).filter(Item.id == data.item_id).first()
+
+    if not item or not item.en_stock:
+        raise HTTPException(status_code=400, detail="Item no disponible")
+
+    venta = Venta(
+        item_id=data.item_id,
+        tipo_venta_id=data.tipo_venta_id,
+        cliente=data.cliente,
+        precio=data.precio,
+        garantia_meses=data.garantia_meses,
+        numero_factura=data.numero_factura
+    )
+
+    item.en_stock = False
+    item.estado_actual = "VENDIDO"
+
+    db.add(venta)
+    db.commit()
+
+    return {"mensaje": "Venta registrada"}
+
+# ---------------- STOCK ----------------
+
+@app.get("/stock")
+def ver_stock(
+    db: Session = Depends(get_db),
+    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN"))
+):
+    items = db.query(Item).filter(Item.en_stock == True).all()
+    return [{"id": i.id, "estado": i.estado_actual} for i in items]
+
+# ---------------- ROOT ----------------
+
 @app.get("/")
 def root():
-    return {"mensaje": "Servidor funcionando"}
+    return {"mensaje": "ERP Almacen funcionando correctamente"}
