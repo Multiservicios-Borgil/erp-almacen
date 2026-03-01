@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ERP Almacén</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial; padding:20px; }
+        select, input, button { 
+            width:100%; 
+            padding:12px; 
+            margin:8px 0; 
+            font-size:16px; 
+        }
+        button { background:#2c7be5; color:white; border:none; }
+    </style>
+</head>
+<body>
+
+<h2>Nuevo Electrodoméstico</h2>
+
+<form action="/crear_item" method="post">
+    <label>Familia</label>
+    <select name="familia_id">
+        {% for f in familias %}
+            <option value="{{f.id}}">{{f.nombre}}</option>
+        {% endfor %}
+    </select>
+
+    <label>Número de Serie</label>
+    <input type="text" name="numero_serie" required>
+
+    <label>Origen</label>
+    <select name="origen">
+        <option value="COMPRA">Compra</option>
+        <option value="RETIRADO_VIVIENDA">Retirado vivienda</option>
+    </select>
+
+    <button type="submit">Crear</button>
+</form>
+
+</body>
+</html>

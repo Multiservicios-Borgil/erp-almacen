@@ -1,3 +1,8 @@
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi import Request
+
+templates = Jinja2Templates(directory="app/templates")
 from fastapi import FastAPI, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -8,6 +13,33 @@ from .database import SessionLocal, engine
 from .models import Base, Item, Familia, TipoVenta, Venta, Evento
 
 Base.metadata.create_all(bind=engine)
+from .models import Familia
+
+FAMILIAS_PREDEFINIDAS = [
+    "Lavadora",
+    "Frigorífico",
+    "Secadora",
+    "Lavavajillas",
+    "Horno",
+    "Microondas",
+    "Aire acondicionado",
+    "Termo eléctrico",
+    "Placa vitrocerámica",
+    "Campana extractora"
+]
+
+def crear_familias_predeterminadas():
+    db = SessionLocal()
+    try:
+        for nombre in FAMILIAS_PREDEFINIDAS:
+            existe = db.query(Familia).filter(Familia.nombre == nombre).first()
+            if not existe:
+                db.add(Familia(nombre=nombre))
+        db.commit()
+    finally:
+        db.close()
+
+crear_familias_predeterminadas()
 
 app = FastAPI()
 
@@ -177,3 +209,10 @@ def ver_stock(
 @app.get("/")
 def root():
     return {"mensaje": "ERP Almacen funcionando correctamente"}
+@app.get("/panel", response_class=HTMLResponse)
+def panel(request: Request, db: Session = Depends(get_db)):
+    familias = db.query(Familia).all()
+    return templates.TemplateResponse(
+        "panel.html",
+        {"request": request, "familias": familias}
+    )
