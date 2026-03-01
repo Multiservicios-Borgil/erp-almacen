@@ -216,3 +216,42 @@ def panel(request: Request, db: Session = Depends(get_db)):
         "panel.html",
         {"request": request, "familias": familias}
     )
+@app.get("/nuevo", response_class=HTMLResponse)
+def nuevo_form(request: Request, db: Session = Depends(get_db)):
+    familias = db.query(Familia).all()
+    return templates.TemplateResponse(
+        "nuevo.html",
+        {"request": request, "familias": familias}
+    )
+from fastapi import Form
+from fastapi.responses import RedirectResponse
+
+@app.post("/crear_item_web")
+def crear_item_web(
+    familia_id: int = Form(...),
+    numero_serie: str = Form(...),
+    origen: str = Form(...),
+    db: Session = Depends(get_db)
+):
+
+    nuevo_id = f"{datetime.datetime.now().year}-{str(uuid.uuid4())[:6]}"
+
+    item = Item(
+        id=nuevo_id,
+        familia_id=familia_id,
+        numero_serie=numero_serie,
+        estado_actual="REGISTRADO",
+        origen=origen
+    )
+
+    db.add(item)
+    db.commit()
+
+    return RedirectResponse("/panel", status_code=303)
+@app.get("/stock_view", response_class=HTMLResponse)
+def stock_view(request: Request, db: Session = Depends(get_db)):
+    items = db.query(Item).filter(Item.en_stock == True).all()
+    return templates.TemplateResponse(
+        "stock.html",
+        {"request": request, "items": items}
+    )

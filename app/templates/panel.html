@@ -4,39 +4,31 @@
     <title>ERP Almacén</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body { font-family: Arial; padding:20px; }
-        select, input, button { 
-            width:100%; 
-            padding:12px; 
-            margin:8px 0; 
-            font-size:16px; 
+        body { font-family: Arial; padding:20px; background:#f4f6f9; }
+        h2 { text-align:center; }
+        .btn {
+            display:block;
+            width:100%;
+            padding:18px;
+            margin:12px 0;
+            font-size:18px;
+            text-align:center;
+            background:#2c7be5;
+            color:white;
+            text-decoration:none;
+            border-radius:8px;
         }
-        button { background:#2c7be5; color:white; border:none; }
+        .btn.green { background:#28a745; }
+        .btn.orange { background:#fd7e14; }
     </style>
 </head>
 <body>
 
-<h2>Nuevo Electrodoméstico</h2>
+<h2>ERP Almacén</h2>
 
-<form action="/crear_item" method="post">
-    <label>Familia</label>
-    <select name="familia_id">
-        {% for f in familias %}
-            <option value="{{f.id}}">{{f.nombre}}</option>
-        {% endfor %}
-    </select>
-
-    <label>Número de Serie</label>
-    <input type="text" name="numero_serie" required>
-
-    <label>Origen</label>
-    <select name="origen">
-        <option value="COMPRA">Compra</option>
-        <option value="RETIRADO_VIVIENDA">Retirado vivienda</option>
-    </select>
-
-    <button type="submit">Crear</button>
-</form>
+<a href="/nuevo" class="btn">➕ Nuevo Electrodoméstico</a>
+<a href="/stock_view" class="btn green">📦 Ver Stock</a>
+<a href="/docs" class="btn orange">⚙ Panel Técnico</a>
 
 </body>
 </html>
