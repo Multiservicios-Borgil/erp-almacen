@@ -21,7 +21,6 @@ packaging==25.0
 pandas==2.3.1
 pefile==2023.2.7
 platformdirs==4.3.7
-pygame==2.6.1
 pyinstaller-hooks-contrib==2025.8
 pylint==3.3.6
 PyPDF2==3.0.1
