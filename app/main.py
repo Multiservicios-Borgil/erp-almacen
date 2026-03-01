@@ -299,3 +299,6 @@ def crear_item_web(
     qr.save(f"app/static/{nuevo_id}.png")
 
     return RedirectResponse(f"/item/{nuevo_id}", status_code=303)
+from fastapi.staticfiles import StaticFiles
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
