@@ -255,3 +255,47 @@ def stock_view(request: Request, db: Session = Depends(get_db)):
         "stock.html",
         {"request": request, "items": items}
     )
+@app.get("/item/{item_id}", response_class=HTMLResponse)
+def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    if not item:
+        return HTMLResponse("<h2>Item no encontrado</h2>")
+
+    return templates.TemplateResponse(
+        "item.html",
+        {"request": request, "item": item}
+    )
+import qrcode
+import os
+
+@app.post("/crear_item_web")
+def crear_item_web(
+    familia_id: int = Form(...),
+    numero_serie: str = Form(...),
+    origen: str = Form(...),
+    db: Session = Depends(get_db)
+):
+
+    nuevo_id = f"{datetime.datetime.now().year}-{str(uuid.uuid4())[:6]}"
+
+    item = Item(
+        id=nuevo_id,
+        familia_id=familia_id,
+        numero_serie=numero_serie,
+        estado_actual="REGISTRADO",
+        origen=origen
+    )
+
+    db.add(item)
+    db.commit()
+
+    # Crear QR
+    url = f"https://tuservicio.onrender.com/item/{nuevo_id}"
+
+    os.makedirs("app/static", exist_ok=True)
+
+    qr = qrcode.make(url)
+    qr.save(f"app/static/{nuevo_id}.png")
+
+    return RedirectResponse(f"/item/{nuevo_id}", status_code=303)

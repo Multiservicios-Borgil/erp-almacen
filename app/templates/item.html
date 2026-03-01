@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ficha Aparato</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial; padding:20px; }
+        .card {
+            padding:15px;
+            border-radius:10px;
+            background:#f4f6f9;
+            margin-bottom:20px;
+        }
+        .btn {
+            display:block;
+            width:100%;
+            padding:15px;
+            margin:10px 0;
+            text-align:center;
+            background:#2c7be5;
+            color:white;
+            text-decoration:none;
+            border-radius:8px;
+        }
+        .danger { background:#dc3545; }
+        .success { background:#28a745; }
+    </style>
+</head>
+<body>
+
+<h2>Ficha del Aparato</h2>
+
+<div class="card">
+    <strong>ID:</strong> {{item.id}} <br>
+    <strong>Estado:</strong> {{item.estado_actual}} <br>
+    <strong>Origen:</strong> {{item.origen}} <br>
+    <strong>Serie:</strong> {{item.numero_serie}}
+</div>
+
+<a href="/panel" class="btn">⬅ Volver</a>
+
+</body>
+</html>
