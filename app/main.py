@@ -255,16 +255,23 @@ def stock_view(request: Request, db: Session = Depends(get_db)):
         "stock.html",
         {"request": request, "items": items}
     )
-@app.get("/item/{item_id}", response_class=HTMLResponse)
-def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
-    item = db.query(Item).filter(Item.id == item_id).first()
+@app.get("/stock_view", response_class=HTMLResponse)
+def stock_view(request: Request, db: Session = Depends(get_db)):
+    items_db = db.query(Item).filter(Item.en_stock == True).all()
 
-    if not item:
-        return HTMLResponse("<h2>Item no encontrado</h2>")
+    items = []
+    for i in items_db:
+        items.append({
+            "id": i.id,
+            "estado": i.estado_actual,
+            "serie": i.numero_serie,
+            "origen": i.origen,
+            "familia": i.familia.nombre if i.familia else "Sin familia"
+        })
 
     return templates.TemplateResponse(
-        "item.html",
-        {"request": request, "item": item}
+        "stock.html",
+        {"request": request, "items": items}
     )
 import qrcode
 import os
