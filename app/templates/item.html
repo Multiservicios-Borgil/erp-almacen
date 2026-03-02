@@ -22,8 +22,6 @@
             text-decoration:none;
             border-radius:8px;
         }
-        .danger { background:#dc3545; }
-        .success { background:#28a745; }
     </style>
 </head>
 <body>
@@ -32,14 +30,16 @@
 
 <div class="card">
     <strong>ID:</strong> {{item.id}} <br>
-    <strong>Estado:</strong> {{item.estado_actual}} <br>
+    <strong>Familia:</strong> {{item.familia}} <br>
+    <strong>Estado:</strong> {{item.estado}} <br>
     <strong>Origen:</strong> {{item.origen}} <br>
-    <strong>Serie:</strong> {{item.numero_serie}}
+    <strong>Serie:</strong> {{item.serie}}
 </div>
 
 <h3>Código QR</h3>
 <img src="/static/{{item.id}}.png" width="250">
-<a href="/panel" class="btn">⬅ Volver</a>
+
+<a href="/stock_view" class="btn">⬅ Volver al stock</a>
 
 </body>
 </html>

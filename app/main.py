@@ -309,3 +309,23 @@ def crear_item_web(
 from fastapi.staticfiles import StaticFiles
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+@app.get("/item/{item_id}", response_class=HTMLResponse)
+def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
+    i = db.query(Item).filter(Item.id == item_id).first()
+
+    if not i:
+        return HTMLResponse("<h2>Item no encontrado</h2>")
+
+    item = {
+        "id": i.id,
+        "estado": i.estado_actual,
+        "serie": i.numero_serie,
+        "origen": i.origen,
+        "familia": i.familia.nombre if i.familia else "Sin familia"
+    }
+
+    return templates.TemplateResponse(
+        "item.html",
+        {"request": request, "item": item}
+    )
