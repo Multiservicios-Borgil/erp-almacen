@@ -7,4 +7,55 @@
         body { font-family: Arial; padding:20px; background:#f4f6f9; }
 
         .card {
-            padding:
+            padding:15px;
+            margin:10px 0;
+            border-radius:10px;
+            background:white;
+            box-shadow:0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .estado {
+            font-weight:bold;
+            padding:5px 10px;
+            border-radius:5px;
+            display:inline-block;
+        }
+
+        .REGISTRADO { background:#6c757d; color:white; }
+        .FUNCIONA { background:#28a745; color:white; }
+        .ESTROPEADO { background:#dc3545; color:white; }
+        .REPARADO { background:#17a2b8; color:white; }
+        .PREPARADO_VENTA { background:#007bff; color:white; }
+
+        .btn {
+            display:block;
+            margin-top:10px;
+            padding:10px;
+            background:#2c7be5;
+            color:white;
+            text-align:center;
+            text-decoration:none;
+            border-radius:6px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Stock Actual</h2>
+
+{% for item in items %}
+<div class="card">
+    <strong>ID:</strong> {{item.id}} <br>
+    <strong>Familia:</strong> {{item.familia}} <br>
+    <strong>Serie:</strong> {{item.serie}} <br>
+    <strong>Origen:</strong> {{item.origen}} <br>
+    <div class="estado {{item.estado}}">
+        {{item.estado}}
+    </div>
+
+    <a href="/item/{{item.id}}" class="btn">Ver ficha</a>
+</div>
+{% endfor %}
+
+</body>
+</html>
