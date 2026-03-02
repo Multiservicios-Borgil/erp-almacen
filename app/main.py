@@ -329,3 +329,15 @@ def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
         "item.html",
         {"request": request, "item": item}
     )
+@app.post("/cambiar_estado_web/{item_id}")
+def cambiar_estado_web(item_id: str, nuevo_estado: str = Form(...), db: Session = Depends(get_db)):
+
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    if not item:
+        return HTMLResponse("<h2>Item no encontrado</h2>")
+
+    item.estado_actual = nuevo_estado
+    db.commit()
+
+    return RedirectResponse(f"/item/{item_id}", status_code=303)

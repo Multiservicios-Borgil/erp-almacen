@@ -40,6 +40,31 @@
 <img src="/static/{{item.id}}.png" width="250">
 
 <a href="/stock_view" class="btn">⬅ Volver al stock</a>
+<h3>Cambiar Estado</h3>
+
+<form method="post" action="/cambiar_estado_web/{{item.id}}">
+    <button name="nuevo_estado" value="FUNCIONA" class="btn" style="background:#28a745;">
+        FUNCIONA
+    </button>
+</form>
+
+<form method="post" action="/cambiar_estado_web/{{item.id}}">
+    <button name="nuevo_estado" value="ESTROPEADO" class="btn" style="background:#dc3545;">
+        ESTROPEADO
+    </button>
+</form>
+
+<form method="post" action="/cambiar_estado_web/{{item.id}}">
+    <button name="nuevo_estado" value="REPARADO" class="btn" style="background:#17a2b8;">
+        REPARADO
+    </button>
+</form>
+
+<form method="post" action="/cambiar_estado_web/{{item.id}}">
+    <button name="nuevo_estado" value="PREPARADO_VENTA" class="btn" style="background:#007bff;">
+        PREPARADO PARA VENTA
+    </button>
+</form>
 
 </body>
 </html>
