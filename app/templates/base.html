@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}ERP{% endblock %}</title>
+    <style>
+        body { font-family: Arial; margin:0; background:#f4f6f9; }
+
+        .navbar {
+            background:#2c7be5;
+            padding:15px;
+            color:white;
+            text-align:center;
+            font-weight:bold;
+        }
+
+        .navbar a {
+            color:white;
+            text-decoration:none;
+            margin:0 10px;
+            font-weight:normal;
+        }
+
+        .container {
+            padding:20px;
+        }
+
+        .btn {
+            display:block;
+            width:100%;
+            padding:14px;
+            margin:10px 0;
+            text-align:center;
+            background:#2c7be5;
+            color:white;
+            text-decoration:none;
+            border-radius:8px;
+            border:none;
+            font-size:16px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    ERP Almacén |
+    <a href="/panel">🏠 Panel</a>
+    <a href="/stock_view">📦 Stock</a>
+    <a href="/scan">📷 Escanear</a>
+</div>
+
+<div class="container">
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

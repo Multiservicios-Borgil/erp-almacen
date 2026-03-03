@@ -1,51 +1,24 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Ficha Aparato</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { font-family: Arial; padding:20px; }
-        .card {
-            padding:15px;
-            border-radius:10px;
-            background:#f4f6f9;
-            margin-bottom:20px;
-        }
-        .btn {
-            display:block;
-            width:100%;
-            padding:15px;
-            margin:10px 0;
-            text-align:center;
-            background:#2c7be5;
-            color:white;
-            text-decoration:none;
-            border-radius:8px;
-        }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
 
+{% block title %}Ficha{% endblock %}
+
+{% block content %}
 <h2>Ficha del Aparato</h2>
 
-<div class="card">
+<div style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">
     <strong>ID:</strong> {{item.id}} <br>
     <strong>Familia:</strong> {{item.familia}} <br>
     <strong>Estado:</strong> {{item.estado}} <br>
-    <strong>Origen:</strong> {{item.origen}} <br>
     <strong>Serie:</strong> {{item.serie}}
 </div>
 
-<h3>Código QR</h3>
+<h3>QR</h3>
 <img src="/static/{{item.id}}.png" width="250">
 
-<a href="/stock_view" class="btn">⬅ Volver al stock</a>
 <h3>Cambiar Estado</h3>
 
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
-    <button name="nuevo_estado" value="FUNCIONA" class="btn" style="background:#28a745;">
-        FUNCIONA
-    </button>
+    <button name="nuevo_estado" value="FUNCIONA" class="btn">FUNCIONA</button>
 </form>
 
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
@@ -54,17 +27,4 @@
     </button>
 </form>
 
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-    <button name="nuevo_estado" value="REPARADO" class="btn" style="background:#17a2b8;">
-        REPARADO
-    </button>
-</form>
-
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-    <button name="nuevo_estado" value="PREPARADO_VENTA" class="btn" style="background:#007bff;">
-        PREPARADO PARA VENTA
-    </button>
-</form>
-
-</body>
-</html>
+{% endblock %}
