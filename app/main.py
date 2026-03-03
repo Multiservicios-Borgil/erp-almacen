@@ -1,6 +1,8 @@
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
+from fastapi import Form
+from fastapi.responses import RedirectResponse
 
 templates = Jinja2Templates(directory="app/templates")
 from fastapi import FastAPI, Depends, HTTPException, Header
@@ -330,8 +332,11 @@ def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
         {"request": request, "item": item}
     )
 @app.post("/cambiar_estado_web/{item_id}")
-def cambiar_estado_web(item_id: str, nuevo_estado: str = Form(...), db: Session = Depends(get_db)):
-
+def cambiar_estado_web(
+    item_id: str,
+    nuevo_estado: str = Form(...),
+    db: Session = Depends(get_db)
+):
     item = db.query(Item).filter(Item.id == item_id).first()
 
     if not item:
