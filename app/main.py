@@ -341,3 +341,6 @@ def cambiar_estado_web(item_id: str, nuevo_estado: str = Form(...), db: Session 
     db.commit()
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)
+@app.get("/scan", response_class=HTMLResponse)
+def scan_page(request: Request):
+    return templates.TemplateResponse("scan.html", {"request": request})

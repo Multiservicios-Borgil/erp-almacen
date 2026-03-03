@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Escanear QR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: Arial; padding:20px; text-align:center; }
+        #reader { width:100%; }
+        .btn {
+            display:block;
+            margin-top:20px;
+            padding:12px;
+            background:#2c7be5;
+            color:white;
+            text-decoration:none;
+            border-radius:6px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Escanear Código QR</h2>
+
+<div id="reader"></div>
+
+<a href="/panel" class="btn">⬅ Volver</a>
+
+<script>
+function onScanSuccess(decodedText) {
+    window.location.href = decodedText;
+}
+
+let scanner = new Html5QrcodeScanner(
+    "reader",
+    { fps: 10, qrbox: 250 },
+    false
+);
+
+scanner.render(onScanSuccess);
+</script>
+
+</body>
+</html>
