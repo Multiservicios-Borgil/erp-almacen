@@ -349,3 +349,37 @@ def cambiar_estado_web(
 @app.get("/scan", response_class=HTMLResponse)
 def scan_page(request: Request):
     return templates.TemplateResponse("scan.html", {"request": request})
+@app.get("/vender/{item_id}", response_class=HTMLResponse)
+def vender_form(item_id: str, request: Request, db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    if not item:
+        return HTMLResponse("<h2>Item no encontrado</h2>")
+
+    return templates.TemplateResponse(
+        "vender.html",
+        {"request": request, "item": item}
+    )
+@app.post("/vender/{item_id}")
+def procesar_venta(
+    item_id: str,
+    numero_factura: str = Form(None),
+    tipo_venta: str = Form(...),
+    precio: float = Form(...),
+    db: Session = Depends(get_db)
+):
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    if not item:
+        return HTMLResponse("<h2>Item no encontrado</h2>")
+
+    item.estado_actual = "VENDIDO"
+    item.en_stock = False
+    item.numero_factura = numero_factura
+    item.tipo_venta = tipo_venta
+    item.precio_venta = precio
+    item.fecha_venta = datetime.datetime.now()
+
+    db.commit()
+
+    return RedirectResponse("/stock_view", status_code=303)

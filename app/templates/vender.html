@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Venta{% endblock %}
+
+{% block content %}
+
+<h2>Registrar Venta</h2>
+
+<div style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">
+    <strong>ID:</strong> {{item.id}} <br>
+    <strong>Estado actual:</strong> {{item.estado_actual}}
+</div>
+
+<form method="post" action="/vender/{{item.id}}">
+    
+    <label>Número de factura (opcional)</label>
+    <input type="text" name="numero_factura" class="btn" style="background:white;color:black;">
+
+    <label>Tipo de venta</label>
+    <select name="tipo_venta" class="btn" style="background:white;color:black;">
+        <option value="VENTA_NUEVO">Venta como nuevo</option>
+        <option value="VENTA_USADO">Venta como usado</option>
+        <option value="VENTA_GOLPE">Venta con golpe</option>
+    </select>
+
+    <label>Precio</label>
+    <input type="number" step="0.01" name="precio" class="btn" style="background:white;color:black;" required>
+
+    <button type="submit" class="btn" style="background:#28a745;">
+        Confirmar Venta
+    </button>
+</form>
+
+{% endblock %}

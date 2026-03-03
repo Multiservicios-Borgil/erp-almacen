@@ -69,6 +69,13 @@ class Item(Base):
 
     familia = relationship("Familia")
     hijos = relationship("Item", remote_side=[id])
+    from sqlalchemy import Float, DateTime
+import datetime
+
+precio_venta = Column(Float, nullable=True)
+numero_factura = Column(String, nullable=True)
+tipo_venta = Column(String, nullable=True)
+fecha_venta = Column(DateTime, nullable=True)
 
 class Evento(Base):
     __tablename__ = "eventos"
