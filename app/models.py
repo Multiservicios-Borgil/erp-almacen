@@ -62,7 +62,6 @@ class Item(Base):
     back_populates="parent",
     cascade="all, delete"
 )
-)
     familia_id = Column(Integer, ForeignKey("familias.id"))
     sku_id = Column(Integer, ForeignKey("productos.id"))
     numero_serie = Column(String)
