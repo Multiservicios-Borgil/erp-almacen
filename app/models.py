@@ -64,8 +64,7 @@ class Item(Base):
     diagnostico_tecnico = Column(Text)
 
     fecha_compra = Column(Date)
-    fecha_creacion = Column(TIMESTAMP, default=datetime.datetime.utcnow)
-    fecha_actualizacion = Column(TIMESTAMP, default=datetime.datetime.utcnow)
+    fecha_creacion = Column(DateTime, default=datetime.datetime.utcnow)
 
     familia = relationship("Familia")
     hijos = relationship("Item", remote_side=[id])
