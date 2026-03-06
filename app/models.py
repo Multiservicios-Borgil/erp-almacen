@@ -50,10 +50,18 @@ class Item(Base):
 
     id = Column(String, primary_key=True)
     parent_id = Column(String, ForeignKey("items.id"), nullable=True)
+
     parent = relationship(
     "Item",
     remote_side=[id],
-    backref="hijos"
+    back_populates="hijos"
+)
+
+    hijos = relationship(
+    "Item",
+    back_populates="parent",
+    cascade="all, delete"
+)
 )
     familia_id = Column(Integer, ForeignKey("familias.id"))
     sku_id = Column(Integer, ForeignKey("productos.id"))
