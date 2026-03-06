@@ -12,7 +12,7 @@ from pydantic import BaseModel
 import datetime, uuid
 
 from .database import SessionLocal, engine
-from .models import Base, Item, Familia, TipoVenta, Venta, Evento
+from .models import Base, Item, Familia
 
 Base.metadata.create_all(bind=engine)
 from .models import Familia
