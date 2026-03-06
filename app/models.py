@@ -49,7 +49,12 @@ class Item(Base):
     __tablename__ = "items"
 
     id = Column(String, primary_key=True)
-    parent_id = Column(String, ForeignKey('items.id'))
+    parent_id = Column(String, ForeignKey("items.id"), nullable=True)
+    parent = relationship(
+    "Item",
+    remote_side=[id],
+    backref="hijos"
+)
     familia_id = Column(Integer, ForeignKey("familias.id"))
     sku_id = Column(Integer, ForeignKey("productos.id"))
     numero_serie = Column(String)
