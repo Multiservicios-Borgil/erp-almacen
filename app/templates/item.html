@@ -18,6 +18,18 @@
 <img src="/static/{{item.id}}.png" width="250">
 
 <h3>Cambiar Estado</h3>
+<h3>Piezas del aparato</h3>
+
+{% for hijo in hijos %}
+<div style="background:white;padding:10px;margin:8px 0;border-radius:8px;">
+<strong>ID:</strong> {{hijo.id}}
+<a href="/item/{{hijo.id}}" class="btn">Ver pieza</a>
+</div>
+{% endfor %}
+
+<a href="/crear_pieza/{{item.id}}" class="btn" style="background:#17a2b8;">
+➕ Añadir pieza
+</a>
 
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
     <button type="submit" name="nuevo_estado" value="FUNCIONA" class="btn" style="background:#28a745;">
@@ -49,5 +61,17 @@
 </a>
     </button>
 </form>
+<h3>Piezas del aparato</h3>
+
+{% for hijo in hijos %}
+<div style="background:white;padding:10px;margin:8px 0;border-radius:8px;">
+<strong>ID:</strong> {{hijo.id}}
+<a href="/item/{{hijo.id}}" class="btn">Ver pieza</a>
+</div>
+{% endfor %}
+
+<a href="/crear_pieza/{{item.id}}" class="btn" style="background:#17a2b8;">
+➕ Añadir pieza
+</a>
 
 {% endblock %}

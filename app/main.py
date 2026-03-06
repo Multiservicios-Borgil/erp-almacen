@@ -317,7 +317,15 @@ def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
     i = db.query(Item).filter(Item.id == item_id).first()
 
     if not i:
-        return HTMLResponse("<h2>Item no encontrado</h2>")
+        hijos = db.query(Item).filter(Item.parent_id == item_id).all()
+        return templates.TemplateResponse(
+    "item.html",
+    {
+        "request": request,
+        "item": item,
+        "hijos": hijos
+    }
+)
 
     item = {
         "id": i.id,
@@ -383,3 +391,58 @@ def procesar_venta(
     db.commit()
 
     return RedirectResponse("/stock_view", status_code=303)
+@app.get("/crear_pieza/{item_id}", response_class=HTMLResponse)
+def crear_pieza_form(item_id: str, request: Request):
+    return templates.TemplateResponse(
+        "crear_pieza.html",
+        {"request": request, "parent_id": item_id}
+    )
+@app.post("/crear_pieza/{item_id}")
+def crear_pieza(
+    item_id: str,
+    nombre: str = Form(...),
+    db: Session = Depends(get_db)
+):
+
+    nuevo_id = f"PZ-{str(uuid.uuid4())[:6]}"
+
+    pieza = Item(
+        id=nuevo_id,
+        numero_serie=None,
+        estado_actual="REGISTRADO",
+        origen="DESPIECE",
+        parent_id=item_id,
+        en_stock=True
+    )
+
+    db.add(pieza)
+    db.commit()
+
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+@app.get("/crear_pieza/{item_id}", response_class=HTMLResponse)
+def crear_pieza_form(item_id: str, request: Request):
+    return templates.TemplateResponse(
+        "crear_pieza.html",
+        {"request": request, "parent_id": item_id}
+    )
+@app.post("/crear_pieza/{item_id}")
+def crear_pieza(
+    item_id: str,
+    nombre: str = Form(...),
+    db: Session = Depends(get_db)
+):
+
+    nuevo_id = f"PZ-{str(uuid.uuid4())[:6]}"
+
+    pieza = Item(
+        id=nuevo_id,
+        estado_actual="REGISTRADO",
+        origen="DESPIECE",
+        parent_id=item_id,
+        en_stock=True
+    )
+
+    db.add(pieza)
+    db.commit()
+
+    return RedirectResponse(f"/item/{item_id}", status_code=303)

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Crear pieza{% endblock %}
+
+{% block content %}
+
+<h2>Crear pieza del aparato</h2>
+
+<form method="post" action="/crear_pieza/{{parent_id}}">
+
+<label>Nombre de la pieza</label>
+<input type="text" name="nombre" class="btn" style="background:white;color:black;" required>
+
+<button type="submit" class="btn" style="background:#17a2b8;">
+Crear pieza
+</button>
+
+</form>
+
+{% endblock %}
