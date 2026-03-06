@@ -72,7 +72,7 @@ class Item(Base):
     fecha_creacion = Column(DateTime, default=datetime.datetime.utcnow)
 
     familia = relationship("Familia")
-    hijos = relationship("Item", remote_side=[id])
+    
     from sqlalchemy import Float, DateTime
 import datetime
 
