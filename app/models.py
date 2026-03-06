@@ -97,6 +97,6 @@ class Venta(Base):
     precio = Column(String)
     garantia_meses = Column(Integer)
     numero_factura = Column(String, nullable=True)
-    fecha = Column(TIMESTAMP, default=datetime.datetime.utcnow)
+    fecha = Column(DateTime, default=datetime.datetime.utcnow)
 
     tipo_venta = relationship("TipoVenta")
