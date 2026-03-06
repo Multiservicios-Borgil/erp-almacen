@@ -84,7 +84,7 @@ class Evento(Base):
     estado_anterior = Column(String)
     estado_nuevo = Column(String)
     usuario = Column(String)
-    fecha = Column(TIMESTAMP, default=datetime.datetime.utcnow)
+    fecha = Column(DateTime, default=datetime.datetime.utcnow)
     comentario = Column(Text)
 
 class Venta(Base):
