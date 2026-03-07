@@ -508,7 +508,7 @@ def buscar_piezas(
             "items": resultados
         }
     )
-@app.post("/crear_pieza_directa/{item_id}/{nombre}")
+@app.get("/crear_pieza_directa/{item_id}/{nombre}")
 def crear_pieza_directa(
     item_id: str,
     nombre: str,
