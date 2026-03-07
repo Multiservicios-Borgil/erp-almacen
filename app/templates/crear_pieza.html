@@ -9,10 +9,12 @@
 <form method="post" action="/crear_pieza/{{parent_id}}">
 
 <label>Nombre de la pieza</label>
-<input type="text" name="nombre" style="width:100%;padding:10px;margin:10px 0;" required>
+<input type="text" name="nombre_pieza" required>
 
-<button type="submit" style="background:#17a2b8;color:white;padding:10px;border:none;border-radius:5px;">
-Crear pieza
+<label>Medidas</label>
+<input type="text" name="medidas" placeholder="ej: 30x15x12 cm">
+
+<button type="submit">Crear pieza</button>
 </button>
 
 </form>

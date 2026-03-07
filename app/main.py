@@ -113,6 +113,8 @@ def crear_item(
         origen=data.origen,
         motivo_retirada=data.motivo_retirada,
         diagnostico_inicial=data.diagnostico_inicial,
+        nombre_pieza = Column(String, nullable=True)
+        medidas = Column(String, nullable=True)
     )
 
     db.add(item)
@@ -381,10 +383,34 @@ def crear_pieza_form(item_id: str, request: Request):
         "crear_pieza.html",
         {"request": request, "parent_id": item_id}
     )
+
 @app.post("/crear_pieza/{item_id}")
 def crear_pieza(
     item_id: str,
     nombre: str = Form(...),
+    db: Session = Depends(get_db)
+):
+
+    nuevo_id = f"PZ-{str(uuid.uuid4())[:6]}"
+
+    pieza = Item(
+        id=nuevo_id,
+        estado_actual="REGISTRADO",
+        origen="DESPIECE",
+        parent_id=item_id,
+        en_stock=True
+    )
+
+    db.add(pieza)
+    db.commit()
+
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+@app.post("/crear_pieza/{item_id}")
+def crear_pieza(
+    item_id: str,
+    nombre_pieza: str = Form(...),
+    medidas: str = Form(None),
     db: Session = Depends(get_db)
 ):
 
@@ -394,7 +420,8 @@ def crear_pieza(
 
     pieza = Item(
         id=nuevo_id,
-        numero_serie=None,
+        nombre_pieza=nombre_pieza,
+        medidas=medidas,
         familia_id=padre.familia_id,
         estado_actual="REGISTRADO",
         origen="DESPIECE",
@@ -406,40 +433,6 @@ def crear_pieza(
     db.commit()
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)
-@app.get("/crear_pieza/{item_id}", response_class=HTMLResponse)
-def crear_pieza_form(item_id: str, request: Request):
-    return templates.TemplateResponse(
-        "crear_pieza.html",
-        {"request": request, "parent_id": item_id}
-    )
-@app.post("/crear_pieza/{item_id}")
-def crear_pieza(
-    item_id: str,
-    nombre: str = Form(...),
-    db: Session = Depends(get_db)
-):
-
-    nuevo_id = f"PZ-{str(uuid.uuid4())[:6]}"
-
-    pieza = Item(
-        id=nuevo_id,
-        estado_actual="REGISTRADO",
-        origen="DESPIECE",
-        parent_id=item_id,
-        en_stock=True
-    )
-
-    db.add(pieza)
-    db.commit()
-
-    return RedirectResponse(f"/item/{item_id}", status_code=303)
-
-@app.get("/crear_pieza/{item_id}", response_class=HTMLResponse)
-def crear_pieza_form(item_id: str, request: Request):
-    return templates.TemplateResponse(
-        "crear_pieza.html",
-        {"request": request, "parent_id": item_id}
-    )
 @app.get("/export_excel")
 def export_excel(db: Session = Depends(get_db)):
 
