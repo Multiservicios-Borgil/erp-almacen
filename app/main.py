@@ -1,46 +1,18 @@
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Depends, Form, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
-from fastapi import Request
-from fastapi import Form
-from fastapi.responses import RedirectResponse
+
+from sqlalchemy.orm import Session, aliased
+from sqlalchemy import func
+
 import csv
 import io
-from fastapi.responses import StreamingResponse
-templates = Jinja2Templates(directory="app/templates")
-from fastapi import FastAPI, Depends, HTTPException, Header
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-from pydantic import BaseModel
-import datetime, uuid
+import datetime
+import uuid
 
 from .database import SessionLocal, engine
 from .models import Base, Item, Familia
 
-Base.metadata.create_all(bind=engine)
-from .models import Familia
-from sqlalchemy.orm import aliased
-from app.models import Item
-from sqlalchemy.orm import aliased
-from fastapi import Request, Depends
-from sqlalchemy.orm import Session
-from .database import SessionLocal
-from .models import Item
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-query = (
-    db.query(Pieza)
-    .join(Aparato, Pieza.parent_id == Aparato.id)
-    .filter(
-        Pieza.nombre_pieza == nombre_pieza,
-        Aparato.familia_id == familia_id,
-        Pieza.en_stock == True
-    )
-resultados = query.all()
 FAMILIAS_PREDEFINIDAS = [
     "Lavadora",
     "Frigorífico",
@@ -54,6 +26,7 @@ FAMILIAS_PREDEFINIDAS = [
     "Campana extractora"
 ]
 
+
 def crear_familias_predeterminadas():
     db = SessionLocal()
     try:
@@ -65,9 +38,14 @@ def crear_familias_predeterminadas():
     finally:
         db.close()
 
+
 crear_familias_predeterminadas()
 
+# ---------------- APP ----------------
+
 app = FastAPI()
+
+templates = Jinja2Templates(directory="app/templates")
 
 # ---------------- DB ----------------
 
