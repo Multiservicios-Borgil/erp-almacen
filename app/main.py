@@ -5,7 +5,6 @@ from pydantic import BaseModel
 from fastapi import Header
 from .models import Evento, Venta
 from .models import Base, Item, Familia
-import pandas as pd
 
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy import func
@@ -415,36 +414,7 @@ def crear_pieza(
     db.commit()
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)
-@app.get("/export_excel")
-def export_excel(db: Session = Depends(get_db)):
 
-    items = db.query(Item).all()
-
-    data = []
-
-    for i in items:
-        data.append({
-            "ID": i.id,
-            "Familia": i.familia.nombre if i.familia else "",
-            "Serie": i.numero_serie,
-            "Estado": i.estado_actual,
-            "Origen": i.origen,
-            "Precio compra": i.precio_compra,
-            "Albarán": i.numero_albaran
-        })
-
-    df = pd.DataFrame(data)
-
-    output = io.BytesIO()
-    df.to_excel(output, index=False)
-
-    output.seek(0)
-
-    return StreamingResponse(
-        output,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": "attachment; filename=stock.xlsx"}
-    )
 @app.get("/backup_json")
 def backup_json(db: Session = Depends(get_db)):
 
