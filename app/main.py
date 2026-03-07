@@ -113,8 +113,6 @@ def crear_item(
         origen=data.origen,
         motivo_retirada=data.motivo_retirada,
         diagnostico_inicial=data.diagnostico_inicial,
-        nombre_pieza = Column(String, nullable=True)
-        medidas = Column(String, nullable=True)
     )
 
     db.add(item)

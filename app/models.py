@@ -50,6 +50,8 @@ class Item(Base):
 
     id = Column(String, primary_key=True)
     parent_id = Column(String, ForeignKey("items.id"), nullable=True)
+    nombre_pieza = Column(String, nullable=True)
+    medidas = Column(String, nullable=True)
 
     parent = relationship(
     "Item",
