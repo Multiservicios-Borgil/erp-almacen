@@ -7,6 +7,4 @@ passlib[bcrypt]
 alembic
 jinja2
 python-multipart
-openpyxl
 qrcode
-pandas==2.2.2

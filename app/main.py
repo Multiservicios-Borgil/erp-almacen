@@ -3,10 +3,9 @@ from fastapi.templating import Jinja2Templates
 from fastapi import Request
 from fastapi import Form
 from fastapi.responses import RedirectResponse
-import pandas as pd
-from fastapi.responses import StreamingResponse
+import csv
 import io
-
+from fastapi.responses import StreamingResponse
 templates = Jinja2Templates(directory="app/templates")
 from fastapi import FastAPI, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
@@ -504,4 +503,40 @@ def buscar(q: str, request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         "panel.html",
         {"request": request, "error": "Artículo no encontrado"}
+    )
+@app.get("/export_csv")
+def export_csv(db: Session = Depends(get_db)):
+
+    items = db.query(Item).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "ID",
+        "Familia",
+        "Serie",
+        "Estado",
+        "Origen",
+        "Precio compra",
+        "Albaran"
+    ])
+
+    for i in items:
+        writer.writerow([
+            i.id,
+            i.familia.nombre if i.familia else "",
+            i.numero_serie,
+            i.estado_actual,
+            i.origen,
+            i.precio_compra,
+            i.numero_albaran
+        ])
+
+    output.seek(0)
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=stock.csv"}
     )
