@@ -266,32 +266,25 @@ def crear_item_web(
     diagnostico_inicial: str = Form(None),
     db: Session = Depends(get_db)
 ):
-    item = Item(
-    id=nuevo_id,
-    familia_id=familia_id,
-    numero_serie=numero_serie,
-    estado_actual="REGISTRADO",
-    origen=origen,
-    diagnostico_inicial=diagnostico_inicial
-)
 
+    # primero crear ID
     nuevo_id = f"{datetime.datetime.now().year}-{str(uuid.uuid4())[:6]}"
 
+    # luego crear item
     item = Item(
         id=nuevo_id,
         familia_id=familia_id,
         numero_serie=numero_serie,
         estado_actual="REGISTRADO",
-        origen=origen
+        origen=origen,
+        diagnostico_inicial=diagnostico_inicial
     )
 
     db.add(item)
     db.commit()
 
-    # Crear QR
-    url = f"https://erp-almacen.onrender.com/item/{nuevo_id}"
-
-    os.makedirs("app/static", exist_ok=True)
+    # generar QR
+    url = f"{request.base_url}item/{nuevo_id}"
 
     qr = qrcode.make(url)
     qr.save(f"app/static/{nuevo_id}.png")
