@@ -404,11 +404,14 @@ def crear_pieza(
     db: Session = Depends(get_db)
 ):
 
+    padre = db.query(Item).filter(Item.id == item_id).first()
+
     nuevo_id = f"PZ-{str(uuid.uuid4())[:6]}"
 
     pieza = Item(
         id=nuevo_id,
         numero_serie=None,
+        familia_id=padre.familia_id,
         estado_actual="REGISTRADO",
         origen="DESPIECE",
         parent_id=item_id,
