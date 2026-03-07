@@ -32,7 +32,8 @@ def get_db():
         yield db
     finally:
         db.close()
-
+query = (
+    db.query(Pieza)
     .join(Aparato, Pieza.parent_id == Aparato.id)
     .filter(
         Pieza.nombre_pieza == nombre_pieza,
