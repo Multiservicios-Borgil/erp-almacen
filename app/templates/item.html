@@ -104,6 +104,34 @@ Vender
 {% endif %}
 
 
+
+{% if item.parent_id %}
+
+<h3 style="margin-top:30px">Información de la pieza</h3>
+
+<div style="background:white;padding:10px;border-radius:8px;">
+
+{% if item.nombre_pieza %}
+<strong>Nombre pieza:</strong> {{ item.nombre_pieza }} <br>
+{% endif %}
+
+{% if item.medidas %}
+<strong>Medidas:</strong> {{ item.medidas }} <br>
+{% endif %}
+
+<strong>Aparato origen:</strong>
+<a href="/item/{{item.parent_id}}">
+{{item.parent_id}}
+</a>
+
+</div>
+
+{% endif %}
+
+
+
+{% if not item.parent_id %}
+
 <h3 style="margin-top:30px">Piezas del aparato</h3>
 
 {% for hijo in hijos %}
@@ -126,6 +154,9 @@ Vender
 
 {% endfor %}
 
+{% endif %}
+
+
 
 <h3 style="margin-top:30px">Cambiar Estado</h3>
 
@@ -144,5 +175,6 @@ Vender
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
 <button type="submit" name="nuevo_estado" value="PREPARADO_VENTA">PREPARADO PARA VENTA</button>
 </form>
+
 
 {% endblock %}
