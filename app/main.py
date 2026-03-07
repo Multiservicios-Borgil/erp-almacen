@@ -18,7 +18,35 @@ from .models import Base, Item, Familia
 
 Base.metadata.create_all(bind=engine)
 from .models import Familia
+from sqlalchemy.orm import aliased
+from app.models import Item
+from sqlalchemy.orm import aliased
+from fastapi import Request, Depends
+from sqlalchemy.orm import Session
+from .database import SessionLocal
+from .models import Item
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+Pieza = aliased(Item)
+Aparato = aliased(Item)
+
+query = (
+    db.query(Pieza)
+    .join(Aparato, Pieza.parent_id == Aparato.id)
+    .filter(
+        Pieza.nombre_pieza == nombre_pieza,
+        Aparato.familia_id == familia_id,
+        Pieza.en_stock == True
+    )
+)
+
+resultados = query.all()
 FAMILIAS_PREDEFINIDAS = [
     "Lavadora",
     "Frigorífico",
@@ -530,4 +558,41 @@ def export_csv(db: Session = Depends(get_db)):
         iter([output.getvalue()]),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=stock.csv"}
+    )
+from sqlalchemy.orm import aliased
+
+@app.get("/buscar_piezas")
+def buscar_piezas(
+    request: Request,
+    nombre_pieza: str = "",
+    familia_id: int = None,
+    db: Session = Depends(get_db)
+):
+
+    Pieza = aliased(Item)
+    Aparato = aliased(Item)
+
+    query = (
+        db.query(Pieza)
+        .join(Aparato, Pieza.parent_id == Aparato.id)
+        .filter(
+            Pieza.en_stock == True,
+            Pieza.parent_id != None
+        )
+    )
+
+    if nombre_pieza:
+        query = query.filter(Pieza.nombre_pieza.ilike(f"%{nombre_pieza}%"))
+
+    if familia_id:
+        query = query.filter(Aparato.familia_id == familia_id)
+
+    resultados = query.all()
+
+    return templates.TemplateResponse(
+        "buscar_piezas.html",
+        {
+            "request": request,
+            "items": resultados
+        }
     )
