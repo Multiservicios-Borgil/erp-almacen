@@ -365,27 +365,7 @@ def crear_pieza_form(item_id: str, request: Request):
         {"request": request, "parent_id": item_id}
     )
 
-@app.post("/crear_pieza/{item_id}")
-def crear_pieza(
-    item_id: str,
-    nombre: str = Form(...),
-    db: Session = Depends(get_db)
-):
 
-    nuevo_id = f"PZ-{str(uuid.uuid4())[:6]}"
-
-    pieza = Item(
-        id=nuevo_id,
-        estado_actual="REGISTRADO",
-        origen="DESPIECE",
-        parent_id=item_id,
-        en_stock=True
-    )
-
-    db.add(pieza)
-    db.commit()
-
-    return RedirectResponse(f"/item/{item_id}", status_code=303)
 
 @app.post("/crear_pieza/{item_id}")
 def crear_pieza(
