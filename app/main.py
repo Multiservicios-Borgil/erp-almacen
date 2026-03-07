@@ -279,7 +279,7 @@ def crear_item_web(
     db.commit()
 
     # Crear QR
-    url = f"https://tuservicio.onrender.com/item/{nuevo_id}"
+    url = f"https://erp-almacen.onrender.com/item/{nuevo_id}"
 
     os.makedirs("app/static", exist_ok=True)
 
