@@ -3,6 +3,46 @@
 {% block title %}Ficha{% endblock %}
 
 {% block content %}
+<h2>{{ item.id }}</h2>
+
+<p><b>Familia:</b> {{ item.familia.nombre if item.familia else "" }}</p>
+<p><b>Estado:</b> {{ item.estado_actual }}</p>
+
+<img src="/static/{{ item.id }}.png" width="200">
+<div style="margin-top:20px">
+
+<a href="/crear_pieza/{{item.id}}">
+<button style="width:100%;padding:20px;font-size:20px">
+Crear pieza
+</button>
+</a>
+
+</div>
+
+<div style="margin-top:10px">
+
+<a href="/vender/{{item.id}}">
+<button style="width:100%;padding:20px;font-size:20px">
+Vender
+</button>
+</a>
+
+</div>
+<h3>Piezas</h3>
+
+<ul>
+
+{% for h in hijos %}
+
+<li>
+<a href="/item/{{h.id}}">
+{{h.nombre_pieza}} - {{h.id}}
+</a>
+</li>
+
+{% endfor %}
+
+</ul>
 
 <h2>Ficha del Aparato</h2>
 
@@ -18,6 +58,35 @@
 
 <h3>Código QR</h3>
 <img src="/static/{{item.id}}.png" width="250">
+<h3>Crear piezas rápidas</h3>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+
+<a href="/crear_pieza_directa/{{item.id}}/motor">
+<button style="padding:20px;width:100%">Motor</button>
+</a>
+
+<a href="/crear_pieza_directa/{{item.id}}/bomba">
+<button style="padding:20px;width:100%">Bomba</button>
+</a>
+
+<a href="/crear_pieza_directa/{{item.id}}/placa">
+<button style="padding:20px;width:100%">Placa</button>
+</a>
+
+<a href="/crear_pieza_directa/{{item.id}}/puerta">
+<button style="padding:20px;width:100%">Puerta</button>
+</a>
+
+<a href="/crear_pieza_directa/{{item.id}}/tambor">
+<button style="padding:20px;width:100%">Tambor</button>
+</a>
+
+<a href="/crear_pieza_directa/{{item.id}}/electrovalvula">
+<button style="padding:20px;width:100%">Electroválvula</button>
+</a>
+
+</div>
 
 <h3>Piezas del aparato</h3>
 

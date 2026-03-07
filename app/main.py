@@ -508,3 +508,28 @@ def buscar_piezas(
             "items": resultados
         }
     )
+@app.post("/crear_pieza_directa/{item_id}/{nombre}")
+def crear_pieza_directa(
+    item_id: str,
+    nombre: str,
+    db: Session = Depends(get_db)
+):
+
+    padre = db.query(Item).filter(Item.id == item_id).first()
+
+    nuevo_id = f"PZ-{str(uuid.uuid4())[:6]}"
+
+    pieza = Item(
+        id=nuevo_id,
+        nombre_pieza=nombre,
+        familia_id=padre.familia_id,
+        estado_actual="REGISTRADO",
+        origen="DESPIECE",
+        parent_id=item_id,
+        en_stock=True
+    )
+
+    db.add(pieza)
+    db.commit()
+
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
