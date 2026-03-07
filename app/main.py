@@ -1,6 +1,11 @@
 from fastapi import FastAPI, Request, Depends, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
+from fastapi import Header
+from .models import Evento, Venta
+from .models import Base, Item, Familia
+import pandas as pd
 
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy import func
@@ -9,6 +14,7 @@ import csv
 import io
 import datetime
 import uuid
+
 
 from .database import SessionLocal, engine
 from .models import Base, Item, Familia
@@ -230,28 +236,6 @@ def nuevo_form(request: Request, db: Session = Depends(get_db)):
 from fastapi import Form
 from fastapi.responses import RedirectResponse
 
-@app.post("/crear_item_web")
-def crear_item_web(
-    familia_id: int = Form(...),
-    numero_serie: str = Form(...),
-    origen: str = Form(...),
-    db: Session = Depends(get_db)
-):
-
-    nuevo_id = f"{datetime.datetime.now().year}-{str(uuid.uuid4())[:6]}"
-
-    item = Item(
-        id=nuevo_id,
-        familia_id=familia_id,
-        numero_serie=numero_serie,
-        estado_actual="REGISTRADO",
-        origen=origen
-    )
-
-    db.add(item)
-    db.commit()
-
-    return RedirectResponse("/panel", status_code=303)
 
 @app.get("/stock_view", response_class=HTMLResponse)
 def stock_view(request: Request, db: Session = Depends(get_db)):
@@ -531,7 +515,6 @@ def export_csv(db: Session = Depends(get_db)):
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=stock.csv"}
     )
-from sqlalchemy.orm import aliased
 
 @app.get("/buscar_piezas")
 def buscar_piezas(
