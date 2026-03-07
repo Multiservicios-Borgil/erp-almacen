@@ -1,196 +1,148 @@
 {% extends "base.html" %}
 
 {% block title %}Ficha{% endblock %}
-{% if item.diagnostico_inicial %}
-
-<p>
-<b>Diagnóstico inicial:</b><br>
-{{ item.diagnostico_inicial }}
-</p>
-
-{% endif %}
 
 {% block content %}
+
+<h2>{{ item.id }}</h2>
+
+<div style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">
+
+<b>Familia:</b> {{ item.familia.nombre if item.familia else "Sin familia" }} <br>
+<b>Estado:</b> {{ item.estado_actual }} <br>
+<b>Origen:</b> {{ item.origen }} <br>
+<b>Número de serie:</b> {{ item.numero_serie }} <br>
+
+{% if item.precio_compra %}
+<b>Precio compra:</b> {{ item.precio_compra }} € <br>
+{% endif %}
+
+{% if item.numero_albaran %}
+<b>Nº Albarán:</b> {{ item.numero_albaran }} <br>
+{% endif %}
+
+</div>
+
+
+{% if item.diagnostico_inicial %}
+<div style="background:#fff3cd;padding:12px;border-radius:8px;margin-bottom:15px;">
+<b>Diagnóstico inicial:</b><br>
+{{ item.diagnostico_inicial }}
+</div>
+{% endif %}
+
+
 {% if item.coste_reparacion_estimado %}
-
-<p>
-<b>Coste estimado reparación:</b> {{ item.coste_reparacion_estimado }} €
-</p>
-
+<p><b>Coste estimado reparación:</b> {{ item.coste_reparacion_estimado }} €</p>
 {% endif %}
 
 {% if item.decision_tecnica %}
+<p><b>Decisión técnica:</b> {{ item.decision_tecnica }}</p>
+{% endif %}
+
+
 <a href="/diagnostico/{{item.id}}">
-<button style="width:100%;padding:20px">
+<button style="width:100%;padding:18px;margin-bottom:10px">
 Diagnóstico técnico
 </button>
 </a>
-<p>
-<b>Decisión técnica:</b> {{ item.decision_tecnica }}
-</p>
 
-{% endif %}
-<h2>{{ item.id }}</h2>
 
-<p><b>Familia:</b> {{ item.familia.nombre if item.familia else "" }}</p>
-<p><b>Estado:</b> {{ item.estado_actual }}</p>
+<h3>Código QR</h3>
+<img src="/static/{{item.id}}.png" width="220">
 
-<img src="/static/{{ item.id }}.png" width="200">
+
 <div style="margin-top:20px">
 
 <a href="/crear_pieza/{{item.id}}">
-<button style="width:100%;padding:20px;font-size:20px">
+<button style="width:100%;padding:18px;font-size:18px;margin-bottom:10px">
 Crear pieza
 </button>
 </a>
 
-</div>
-
-<div style="margin-top:10px">
-
 <a href="/vender/{{item.id}}">
-<button style="width:100%;padding:20px;font-size:20px">
+<button style="width:100%;padding:18px;font-size:18px">
 Vender
 </button>
 </a>
 
 </div>
-<h3>Piezas</h3>
 
-<ul>
 
-{% for h in hijos %}
-
-<li>
-<a href="/item/{{h.id}}">
-{{h.nombre_pieza}} - {{h.id}}
-</a>
-</li>
-
-{% endfor %}
-
-</ul>
-
-<h2>Ficha del Aparato</h2>
-
-<div style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">
-    <strong>ID:</strong> {{item.id}} <br>
-    <strong>Familia:</strong> {{ item.familia.nombre if item.familia else "Sin familia" }} <br>
-    <strong>Estado:</strong> {{item.estado}} <br>
-    <strong>Origen:</strong> {{item.origen}} <br>
-    <strong>Serie:</strong> {{item.serie}}
-    <strong>Precio compra:</strong> {{ item.precio_compra }}<br>
-    <strong>Nº Albarán:</strong> {{ item.numero_albaran }}<br>
-</div>
 {% if not item.parent_id %}
 
-<h3>Crear piezas rápidas</h3>
-
-<!-- botones -->
-
-{% endif %}
-<h3>Código QR</h3>
-<img src="/static/{{item.id}}.png" width="250">
-<h3>Crear piezas rápidas</h3>
+<h3 style="margin-top:30px">Crear piezas rápidas</h3>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
 
 <a href="/crear_pieza_directa/{{item.id}}/motor">
-<button style="padding:20px;width:100%">Motor</button>
+<button style="padding:18px;width:100%">Motor</button>
 </a>
 
 <a href="/crear_pieza_directa/{{item.id}}/bomba">
-<button style="padding:20px;width:100%">Bomba</button>
+<button style="padding:18px;width:100%">Bomba</button>
 </a>
 
 <a href="/crear_pieza_directa/{{item.id}}/placa">
-<button style="padding:20px;width:100%">Placa</button>
+<button style="padding:18px;width:100%">Placa</button>
 </a>
 
 <a href="/crear_pieza_directa/{{item.id}}/puerta">
-<button style="padding:20px;width:100%">Puerta</button>
+<button style="padding:18px;width:100%">Puerta</button>
 </a>
 
 <a href="/crear_pieza_directa/{{item.id}}/tambor">
-<button style="padding:20px;width:100%">Tambor</button>
+<button style="padding:18px;width:100%">Tambor</button>
 </a>
 
 <a href="/crear_pieza_directa/{{item.id}}/electrovalvula">
-<button style="padding:20px;width:100%">Electroválvula</button>
+<button style="padding:18px;width:100%">Electroválvula</button>
 </a>
 
 </div>
 
-<h3>Piezas del aparato</h3>
-
-{% for hijo in hijos %}
-<div style="background:white;padding:10px;margin:8px 0;border-radius:8px;">
-<strong>ID:</strong> {{hijo.id}}
-<a href="/item/{{hijo.id}}" class="btn">Ver pieza</a>
-{% if item.nombre_pieza %}
-<strong>Pieza:</strong> {{ item.nombre_pieza }}<br>
-<strong>Medidas:</strong> {{ item.medidas }}<br>
 {% endif %}
-</div>
-{% endfor %}
 
-<a href="/crear_pieza/{{item.id}}" style="background:#17a2b8;color:white;padding:10px;border-radius:5px;text-decoration:none;">
-➕ Añadir pieza
-</a>
 
-<h3>Cambiar Estado</h3>
-<h3>Piezas del aparato</h3>
+<h3 style="margin-top:30px">Piezas del aparato</h3>
 
 {% for hijo in hijos %}
+
 <div style="background:white;padding:10px;margin:8px 0;border-radius:8px;">
-<strong>ID:</strong> {{hijo.id}}
-<a href="/item/{{hijo.id}}" class="btn">Ver pieza</a>
+
+<strong>ID:</strong> {{hijo.id}} <br>
+
+{% if hijo.nombre_pieza %}
+<strong>Pieza:</strong> {{ hijo.nombre_pieza }} <br>
+{% endif %}
+
+{% if hijo.medidas %}
+<strong>Medidas:</strong> {{ hijo.medidas }} <br>
+{% endif %}
+
+<a href="/item/{{hijo.id}}">Ver pieza</a>
+
 </div>
+
 {% endfor %}
 
-</a>
+
+<h3 style="margin-top:30px">Cambiar Estado</h3>
 
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
-    <button type="submit" name="nuevo_estado" value="FUNCIONA" class="btn" style="background:#28a745;">
-        FUNCIONA
-    </button>
+<button type="submit" name="nuevo_estado" value="FUNCIONA">FUNCIONA</button>
 </form>
 
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
-    <button type="submit" name="nuevo_estado" value="ESTROPEADO" class="btn" style="background:#dc3545;">
-        ESTROPEADO
-    </button>
+<button type="submit" name="nuevo_estado" value="ESTROPEADO">ESTROPEADO</button>
 </form>
 
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
-    <button type="submit" name="nuevo_estado" value="REPARADO" class="btn" style="background:#17a2b8;">
-        REPARADO
-    </button>
+<button type="submit" name="nuevo_estado" value="REPARADO">REPARADO</button>
 </form>
 
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
-    <button type="submit" name="nuevo_estado" value="PREPARADO_VENTA" class="btn" style="background:#007bff;">
-        PREPARADO PARA VENTA
-    </button>
+<button type="submit" name="nuevo_estado" value="PREPARADO_VENTA">PREPARADO PARA VENTA</button>
 </form>
-
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-    <a href="/vender/{{item.id}}" class="btn" style="background:#6c757d;">        
-    Registrar Venta
-</a>
-    </button>
-</form>
-<h3>Piezas del aparato</h3>
-
-{% for hijo in hijos %}
-<div style="background:white;padding:10px;margin:8px 0;border-radius:8px;">
-<strong>ID:</strong> {{hijo.id}}
-<a href="/item/{{hijo.id}}" class="btn">Ver pieza</a>
-</div>
-{% endfor %}
-
-<a href="/crear_pieza/{{item.id}}" class="btn" style="background:#17a2b8;">
-➕ Añadir pieza
-</a>
 
 {% endblock %}
