@@ -365,7 +365,8 @@ def crear_pieza_form(item_id: str, request: Request):
         {"request": request, "parent_id": item_id}
     )
 
-
+import qrcode
+import os
 
 @app.post("/crear_pieza/{item_id}")
 def crear_pieza(
@@ -392,6 +393,12 @@ def crear_pieza(
 
     db.add(pieza)
     db.commit()
+    url = f"https://erp-almacen.onrender.com/item/{nuevo_id}"
+
+    os.makedirs("app/static", exist_ok=True)
+
+    qr = qrcode.make(url)
+    qr.save(f"app/static/{nuevo_id}.png")
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)
 
