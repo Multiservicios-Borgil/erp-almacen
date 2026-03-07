@@ -446,3 +446,10 @@ def crear_pieza(
     db.commit()
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)
+git commit -m "sistema basico de despiece"
+@app.get("/crear_pieza/{item_id}", response_class=HTMLResponse)
+def crear_pieza_form(item_id: str, request: Request):
+    return templates.TemplateResponse(
+        "crear_pieza.html",
+        {"request": request, "parent_id": item_id}
+    )
