@@ -39,8 +39,6 @@ def get_db():
         Aparato.familia_id == familia_id,
         Pieza.en_stock == True
     )
-)
-
 resultados = query.all()
 FAMILIAS_PREDEFINIDAS = [
     "Lavadora",
