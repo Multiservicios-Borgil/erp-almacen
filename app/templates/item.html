@@ -1,8 +1,35 @@
 {% extends "base.html" %}
 
 {% block title %}Ficha{% endblock %}
+{% if item.diagnostico_inicial %}
+
+<p>
+<b>Diagnóstico inicial:</b><br>
+{{ item.diagnostico_inicial }}
+</p>
+
+{% endif %}
 
 {% block content %}
+{% if item.coste_reparacion_estimado %}
+
+<p>
+<b>Coste estimado reparación:</b> {{ item.coste_reparacion_estimado }} €
+</p>
+
+{% endif %}
+
+{% if item.decision_tecnica %}
+<a href="/diagnostico/{{item.id}}">
+<button style="width:100%;padding:20px">
+Diagnóstico técnico
+</button>
+</a>
+<p>
+<b>Decisión técnica:</b> {{ item.decision_tecnica }}
+</p>
+
+{% endif %}
 <h2>{{ item.id }}</h2>
 
 <p><b>Familia:</b> {{ item.familia.nombre if item.familia else "" }}</p>
@@ -55,7 +82,13 @@ Vender
     <strong>Precio compra:</strong> {{ item.precio_compra }}<br>
     <strong>Nº Albarán:</strong> {{ item.numero_albaran }}<br>
 </div>
+{% if not item.parent_id %}
 
+<h3>Crear piezas rápidas</h3>
+
+<!-- botones -->
+
+{% endif %}
 <h3>Código QR</h3>
 <img src="/static/{{item.id}}.png" width="250">
 <h3>Crear piezas rápidas</h3>

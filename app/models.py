@@ -4,6 +4,7 @@ import datetime
 
 Base = declarative_base()
 
+
 class Usuario(Base):
     __tablename__ = "usuarios"
 
@@ -52,7 +53,9 @@ class Item(Base):
     parent_id = Column(String, ForeignKey("items.id"), nullable=True)
     nombre_pieza = Column(String, nullable=True)
     medidas = Column(String, nullable=True)
-
+    diagnostico_inicial = Column(String, nullable=True)
+    coste_reparacion_estimado = Column(Float, nullable=True)
+    decision_tecnica = Column(String, nullable=True)
     parent = relationship(
     "Item",
     remote_side=[id],
@@ -78,7 +81,8 @@ class Item(Base):
     motivo_retirada = Column(Text)
     diagnostico_inicial = Column(Text)
     diagnostico_tecnico = Column(Text)
-
+    coste_reparacion_estimado = Column(Float, nullable=True)
+    decision_tecnica = Column(String, nullable=True)
     fecha_compra = Column(Date)
     fecha_creacion = Column(DateTime, default=datetime.datetime.utcnow)
 

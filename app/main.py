@@ -259,11 +259,21 @@ import os
 
 @app.post("/crear_item_web")
 def crear_item_web(
+    request: Request,
     familia_id: int = Form(...),
     numero_serie: str = Form(...),
     origen: str = Form(...),
+    diagnostico_inicial: str = Form(None),
     db: Session = Depends(get_db)
 ):
+    item = Item(
+    id=nuevo_id,
+    familia_id=familia_id,
+    numero_serie=numero_serie,
+    estado_actual="REGISTRADO",
+    origen=origen,
+    diagnostico_inicial=diagnostico_inicial
+)
 
     nuevo_id = f"{datetime.datetime.now().year}-{str(uuid.uuid4())[:6]}"
 
@@ -517,6 +527,13 @@ def crear_pieza_directa(
 
     padre = db.query(Item).filter(Item.id == item_id).first()
 
+    if not padre:
+        return HTMLResponse("<h2>Item no encontrado</h2>")
+
+    # 🚫 evitar despiezar piezas
+    if padre.parent_id is not None:
+        return HTMLResponse("<h2>Una pieza no puede tener subpiezas</h2>")
+
     nuevo_id = f"PZ-{str(uuid.uuid4())[:6]}"
 
     pieza = Item(
@@ -530,6 +547,31 @@ def crear_pieza_directa(
     )
 
     db.add(pieza)
+    db.commit()
+
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+@app.get("/diagnostico/{item_id}", response_class=HTMLResponse)
+def diagnostico_form(item_id: str, request: Request, db: Session = Depends(get_db)):
+
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    return templates.TemplateResponse(
+        "diagnostico.html",
+        {"request": request, "item": item}
+    )
+@app.post("/diagnostico/{item_id}")
+def guardar_diagnostico(
+    item_id: str,
+    coste: float = Form(None),
+    decision: str = Form(None),
+    db: Session = Depends(get_db)
+):
+
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    item.coste_reparacion_estimado = coste
+    item.decision_tecnica = decision
+
     db.commit()
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)
