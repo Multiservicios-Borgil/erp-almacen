@@ -66,6 +66,8 @@ class Item(Base):
     sku_id = Column(Integer, ForeignKey("productos.id"))
     numero_serie = Column(String)
     proveedor_id = Column(Integer, ForeignKey("proveedores.id"))
+    precio_compra = Column(Float, nullable=True)
+    numero_albaran = Column(String, nullable=True)
 
     estado_actual = Column(String, default="REGISTRADO")
     en_stock = Column(Boolean, default=True)

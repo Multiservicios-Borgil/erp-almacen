@@ -8,10 +8,12 @@
 
 <div style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">
     <strong>ID:</strong> {{item.id}} <br>
-    <strong>Familia:</strong> {{item.familia}} <br>
+    <strong>Familia:</strong> {{ item.familia.nombre if item.familia else "Sin familia" }} <br>
     <strong>Estado:</strong> {{item.estado}} <br>
     <strong>Origen:</strong> {{item.origen}} <br>
     <strong>Serie:</strong> {{item.serie}}
+    <strong>Precio compra:</strong> {{ item.precio_compra }}<br>
+    <strong>Nº Albarán:</strong> {{ item.numero_albaran }}<br>
 </div>
 
 <h3>Código QR</h3>

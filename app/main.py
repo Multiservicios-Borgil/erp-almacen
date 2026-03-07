@@ -3,6 +3,9 @@ from fastapi.templating import Jinja2Templates
 from fastapi import Request
 from fastapi import Form
 from fastapi.responses import RedirectResponse
+import pandas as pd
+from fastapi.responses import StreamingResponse
+import io
 
 templates = Jinja2Templates(directory="app/templates")
 from fastapi import FastAPI, Depends, HTTPException, Header
@@ -437,4 +440,68 @@ def crear_pieza_form(item_id: str, request: Request):
     return templates.TemplateResponse(
         "crear_pieza.html",
         {"request": request, "parent_id": item_id}
+    )
+@app.get("/export_excel")
+def export_excel(db: Session = Depends(get_db)):
+
+    items = db.query(Item).all()
+
+    data = []
+
+    for i in items:
+        data.append({
+            "ID": i.id,
+            "Familia": i.familia.nombre if i.familia else "",
+            "Serie": i.numero_serie,
+            "Estado": i.estado_actual,
+            "Origen": i.origen,
+            "Precio compra": i.precio_compra,
+            "Albarán": i.numero_albaran
+        })
+
+    df = pd.DataFrame(data)
+
+    output = io.BytesIO()
+    df.to_excel(output, index=False)
+
+    output.seek(0)
+
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=stock.xlsx"}
+    )
+@app.get("/backup_json")
+def backup_json(db: Session = Depends(get_db)):
+
+    items = db.query(Item).all()
+
+    data = []
+
+    for i in items:
+        data.append({
+            "id": i.id,
+            "familia": i.familia.nombre if i.familia else None,
+            "serie": i.numero_serie,
+            "estado": i.estado_actual,
+            "origen": i.origen,
+            "precio_compra": i.precio_compra,
+            "albaran": i.numero_albaran
+        })
+
+    return data
+@app.get("/buscar", response_class=HTMLResponse)
+def buscar(q: str, request: Request, db: Session = Depends(get_db)):
+
+    item = db.query(Item).filter(
+        (Item.id == q) |
+        (Item.numero_serie == q)
+    ).first()
+
+    if item:
+        return RedirectResponse(f"/item/{item.id}", status_code=303)
+
+    return templates.TemplateResponse(
+        "panel.html",
+        {"request": request, "error": "Artículo no encontrado"}
     )
