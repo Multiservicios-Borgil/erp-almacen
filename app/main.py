@@ -33,11 +33,6 @@ def get_db():
     finally:
         db.close()
 
-Pieza = aliased(Item)
-Aparato = aliased(Item)
-
-query = (
-    db.query(Pieza)
     .join(Aparato, Pieza.parent_id == Aparato.id)
     .filter(
         Pieza.nombre_pieza == nombre_pieza,
