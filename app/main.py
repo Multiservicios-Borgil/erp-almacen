@@ -525,7 +525,7 @@ def crear_pieza_directa(
     if not padre:
         return HTMLResponse("<h2>Item no encontrado</h2>")
     if padre.decision_tecnica == "REPARAR":
-    return HTMLResponse("<h2>Este aparato está marcado para reparación y no puede despiezarse</h2>")
+        return HTMLResponse("<h2>Este aparato está marcado para reparación y no puede despiezarse</h2>")
 
     # 🚫 evitar despiezar piezas
     if padre.parent_id is not None:
