@@ -1,28 +1,63 @@
-@app.get("/buscar_aparatos", response_class=HTMLResponse)
-def buscar_aparatos(
-    request: Request,
-    familia_id: int = None,
-    estado: str = "",
-    db: Session = Depends(get_db)
-):
+{% extends "base.html" %}
 
-    query = db.query(Item).filter(Item.parent_id == None)
+{% block title %}Buscar electrodomésticos{% endblock %}
 
-    if familia_id:
-        query = query.filter(Item.familia_id == familia_id)
+{% block content %}
 
-    if estado:
-        query = query.filter(Item.estado_actual == estado)
+<h2>Buscar electrodomésticos</h2>
 
-    aparatos = query.all()
+<form method="get">
 
-    familias = db.query(Familia).all()
+<label>Familia</label>
 
-    return templates.TemplateResponse(
-        "buscar_aparatos.html",
-        {
-            "request": request,
-            "aparatos": aparatos,
-            "familias": familias
-        }
-    )
+<select name="familia_id">
+
+<option value="">Todas</option>
+
+{% for f in familias %}
+<option value="{{f.id}}">{{f.nombre}}</option>
+{% endfor %}
+
+</select>
+
+<br><br>
+
+<label>Estado</label>
+
+<select name="estado">
+
+<option value="">Todos</option>
+<option value="REGISTRADO">Registrado</option>
+<option value="FUNCIONA">Funciona</option>
+<option value="ESTROPEADO">Estropeado</option>
+<option value="REPARADO">Reparado</option>
+<option value="PREPARADO_VENTA">Preparado venta</option>
+
+</select>
+
+<br><br>
+
+<button type="submit">Buscar</button>
+
+</form>
+
+<hr>
+
+<h3>Resultados</h3>
+
+{% for a in aparatos %}
+
+<div style="background:white;padding:10px;margin:10px 0;border-radius:8px;">
+
+<b>{{a.id}}</b><br>
+
+Modelo: {{a.modelo}} <br>
+Estado: {{a.estado_actual}} <br>
+
+<a href="/item/{{a.id}}">Ver ficha</a>
+
+</div>
+
+{% endfor %}
+
+{% endblock %}
