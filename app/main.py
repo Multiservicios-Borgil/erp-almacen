@@ -624,3 +624,35 @@ def crear_pieza_directa(
     db.commit()
 
     return RedirectResponse(f"/item/{nuevo_id}", status_code=303)
+@app.post("/precio/{item_id}")
+def actualizar_precio(
+    item_id: str,
+    precio: float = Form(...),
+    db: Session = Depends(get_db)
+):
+
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    item.precio_venta = precio
+
+    db.commit()
+
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+@app.get("/print_qr/{item_id}", response_class=HTMLResponse)
+def print_qr(item_id: str, request: Request, db: Session = Depends(get_db)):
+
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    return templates.TemplateResponse(
+        "print_qr.html",
+        {"request": request, "item": item}
+    )
+@app.get("/print_pieza/{item_id}", response_class=HTMLResponse)
+def print_pieza(item_id: str, request: Request, db: Session = Depends(get_db)):
+
+    pieza = db.query(Item).filter(Item.id == item_id).first()
+
+    return templates.TemplateResponse(
+        "print_pieza.html",
+        {"request": request, "pieza": pieza}
+    )

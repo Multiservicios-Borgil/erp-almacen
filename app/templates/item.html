@@ -16,7 +16,9 @@
 {% if item.precio_compra %}
 <b>Precio compra:</b> {{ item.precio_compra }} € <br>
 {% endif %}
-
+{% if item.precio_venta %}
+<p><b>Precio de venta:</b> {{ item.precio_venta }} €</p>
+{% endif %}
 {% if item.numero_albaran %}
 <b>Nº Albarán:</b> {{ item.numero_albaran }} <br>
 {% endif %}
@@ -46,6 +48,15 @@
 Diagnóstico técnico
 </button>
 </a>
+<h3>Precio de venta</h3>
+
+<form method="post" action="/precio/{{item.id}}">
+
+<input type="number" step="0.01" name="precio">
+
+<button type="submit">Guardar precio</button>
+
+</form>
 
 
 <h3>Código QR</h3>
@@ -183,5 +194,11 @@ Este aparato está marcado para reparación. El despiece está bloqueado.
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
 <button type="submit" name="nuevo_estado" value="PREPARADO_VENTA">PREPARADO PARA VENTA</button>
 </form>
+<a href="/print_qr/{{item.id}}" target="_blank">
+<button>Imprimir QR</button>
+</a>
+<a href="/print_pieza/{{item.id}}" target="_blank">
+<button>Imprimir etiqueta pieza</button>
+</a>
 
 {% endblock %}

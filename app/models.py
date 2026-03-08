@@ -74,6 +74,7 @@ class Item(Base):
     numero_serie = Column(String)
     proveedor_id = Column(Integer, ForeignKey("proveedores.id"))
     precio_compra = Column(Float, nullable=True)
+    precio_venta = Column(Float, nullable=True)
     numero_albaran = Column(String, nullable=True)
 
     estado_actual = Column(String, default="REGISTRADO")

@@ -1,0 +1,17 @@
+<h2>{{pieza.nombre_pieza}}</h2>
+
+<p><b>ID:</b> {{pieza.id}}</p>
+
+{% if pieza.parent_id %}
+<p><b>Aparato origen:</b> {{pieza.parent_id}}</p>
+{% endif %}
+
+{% if pieza.medidas %}
+<p><b>Medidas:</b> {{pieza.medidas}}</p>
+{% endif %}
+
+<img src="/static/{{pieza.id}}.png" width="200">
+
+<script>
+window.print()
+</script>
