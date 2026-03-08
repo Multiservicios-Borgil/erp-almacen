@@ -597,7 +597,7 @@ def nueva_pieza_form(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         "nueva_pieza.html",
         {"request": request, "familias": familias}
-
+    )
 @app.post("/crear_pieza_directa")
 def crear_pieza_directa(
     familia_id: int = Form(...),
@@ -624,4 +624,3 @@ def crear_pieza_directa(
     db.commit()
 
     return RedirectResponse(f"/item/{nuevo_id}", status_code=303)
-    )
