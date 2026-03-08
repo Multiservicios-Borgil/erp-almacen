@@ -1,0 +1,28 @@
+@app.get("/buscar_aparatos", response_class=HTMLResponse)
+def buscar_aparatos(
+    request: Request,
+    familia_id: int = None,
+    estado: str = "",
+    db: Session = Depends(get_db)
+):
+
+    query = db.query(Item).filter(Item.parent_id == None)
+
+    if familia_id:
+        query = query.filter(Item.familia_id == familia_id)
+
+    if estado:
+        query = query.filter(Item.estado_actual == estado)
+
+    aparatos = query.all()
+
+    familias = db.query(Familia).all()
+
+    return templates.TemplateResponse(
+        "buscar_aparatos.html",
+        {
+            "request": request,
+            "aparatos": aparatos,
+            "familias": familias
+        }
+    )

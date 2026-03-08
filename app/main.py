@@ -415,6 +415,9 @@ def crear_pieza(
 
     db.add(pieza)
     db.commit()
+    url = f"{request.base_url}item/{nuevo_id}"
+    qr = qrcode.make(url)
+    qr.save(f"app/static/{nuevo_id}.png")
     url = f"https://erp-almacen.onrender.com/item/{nuevo_id}"
 
     os.makedirs("app/static", exist_ok=True)
@@ -671,3 +674,63 @@ def generar_qr(item_id: str):
     buf.seek(0)
 
     return StreamingResponse(buf, media_type="image/png")
+@app.get("/buscar_piezas_avanzado", response_class=HTMLResponse)
+def buscar_piezas_avanzado(
+    request: Request,
+    familia_id: int = None,
+    modelo: str = "",
+    nombre_pieza: str = "",
+    db: Session = Depends(get_db)
+):
+
+    query = db.query(Item).filter(Item.parent_id != None)
+
+    if familia_id:
+        query = query.filter(Item.familia_id == familia_id)
+
+    if modelo:
+        query = query.filter(Item.modelo.ilike(f"%{modelo}%"))
+
+    if nombre_pieza:
+        query = query.filter(Item.nombre_pieza.ilike(f"%{nombre_pieza}%"))
+
+    piezas = query.all()
+
+    familias = db.query(Familia).all()
+
+    return templates.TemplateResponse(
+        "buscar_piezas.html",
+        {
+            "request": request,
+            "piezas": piezas,
+            "familias": familias
+        }
+    )
+@app.get("/buscar_aparatos", response_class=HTMLResponse)
+def buscar_aparatos(
+    request: Request,
+    familia_id: int = None,
+    estado: str = "",
+    db: Session = Depends(get_db)
+):
+
+    query = db.query(Item).filter(Item.parent_id == None)
+
+    if familia_id:
+        query = query.filter(Item.familia_id == familia_id)
+
+    if estado:
+        query = query.filter(Item.estado_actual == estado)
+
+    aparatos = query.all()
+
+    familias = db.query(Familia).all()
+
+    return templates.TemplateResponse(
+        "buscar_aparatos.html",
+        {
+            "request": request,
+            "aparatos": aparatos,
+            "familias": familias
+        }
+    )

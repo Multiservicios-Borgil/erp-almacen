@@ -2,9 +2,13 @@
 
 {% block title %}Ficha{% endblock %}
 
+
 {% block content %}
 
 <h2>{{ item.id }}</h2>
+{% if item.nombre_pieza %}
+<h3>{{ item.nombre_pieza }}</h3>
+{% endif %}
 
 <div style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">
 
@@ -12,7 +16,9 @@
 <b>Estado:</b> {{ item.estado_actual }} <br>
 <b>Origen:</b> {{ item.origen }} <br>
 <b>Número de serie:</b> {{ item.numero_serie }} <br>
-
+{% if item.modelo %}
+<b>Modelo:</b> {{ item.modelo }} <br>
+{% endif %}
 {% if item.precio_compra %}
 <b>Precio compra:</b> {{ item.precio_compra }} € <br>
 {% endif %}

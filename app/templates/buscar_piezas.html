@@ -1,0 +1,50 @@
+<h2>Buscar piezas</h2>
+
+<form method="get">
+
+<label>Familia</label>
+
+<select name="familia_id">
+
+<option value="">Todas</option>
+
+{% for f in familias %}
+<option value="{{f.id}}">{{f.nombre}}</option>
+{% endfor %}
+
+</select>
+
+<br><br>
+
+<label>Modelo</label>
+<input type="text" name="modelo">
+
+<br><br>
+
+<label>Nombre pieza</label>
+<input type="text" name="nombre_pieza">
+
+<br><br>
+
+<button type="submit">Buscar</button>
+
+</form>
+
+
+<h3>Resultados</h3>
+
+{% for p in piezas %}
+
+<div style="background:white;padding:10px;margin:10px 0;border-radius:8px;">
+
+<b>{{p.nombre_pieza}}</b><br>
+
+ID: {{p.id}} <br>
+
+Modelo: {{p.modelo}} <br>
+
+<a href="/item/{{p.id}}">Ver pieza</a>
+
+</div>
+
+{% endfor %}
