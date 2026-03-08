@@ -1,0 +1,34 @@
+<h2>Nueva pieza</h2>
+
+<form method="post" action="/crear_pieza_directa">
+
+<label>Familia</label>
+
+<select name="familia_id">
+
+{% for f in familias %}
+<option value="{{f.id}}">{{f.nombre}}</option>
+{% endfor %}
+
+</select>
+
+<br><br>
+
+<label>Nombre pieza</label>
+<input type="text" name="nombre_pieza" required>
+
+<br><br>
+
+<label>Modelo aparato</label>
+<input type="text" name="modelo">
+
+<br><br>
+
+<label>Medidas</label>
+<input type="text" name="medidas">
+
+<br><br>
+
+<button type="submit">Crear pieza</button>
+
+</form>

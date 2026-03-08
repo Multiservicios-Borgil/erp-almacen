@@ -262,19 +262,35 @@ def crear_item_web(
     request: Request,
     familia_id: int = Form(...),
     numero_serie: str = Form(...),
+    modelo: str = Form(None)
     origen: str = Form(...),
     diagnostico_inicial: str = Form(None),
     db: Session = Depends(get_db)
 ):
 
     # primero crear ID
-    nuevo_id = f"{datetime.datetime.now().year}-{str(uuid.uuid4())[:6]}"
+    prefijos = {
+    1: "LAV",
+    2: "FRI",
+    3: "SEC",
+    4: "LAVV",
+    5: "HOR",
+    6: "MIC",
+    7: "AIRE",
+    8: "TER",
+    9: "VIT",
+    10: "CAM"
+}
+    prefijo = prefijos.get(familia_id, "ART")
+
+    nuevo_id = f"{prefijo}-{str(uuid.uuid4())[:4]}"
 
     # luego crear item
     item = Item(
         id=nuevo_id,
         familia_id=familia_id,
         numero_serie=numero_serie,
+        modelo=modelo,
         estado_actual="REGISTRADO",
         origen=origen,
         diagnostico_inicial=diagnostico_inicial
@@ -572,3 +588,40 @@ def guardar_diagnostico(
     db.commit()
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+@app.get("/nueva_pieza", response_class=HTMLResponse)
+def nueva_pieza_form(request: Request, db: Session = Depends(get_db)):
+
+    familias = db.query(Familia).all()
+
+    return templates.TemplateResponse(
+        "nueva_pieza.html",
+        {"request": request, "familias": familias}
+
+@app.post("/crear_pieza_directa")
+def crear_pieza_directa(
+    familia_id: int = Form(...),
+    nombre_pieza: str = Form(...),
+    medidas: str = Form(None),
+    modelo: str = Form(None),
+    db: Session = Depends(get_db)
+):
+
+    nuevo_id = f"PZ-{str(uuid.uuid4())[:6]}"
+
+    pieza = Item(
+        id=nuevo_id,
+        nombre_pieza=nombre_pieza,
+        medidas=medidas,
+        modelo=modelo,
+        familia_id=familia_id,
+        estado_actual="REGISTRADO",
+        origen="STOCK_ANTIGUO",
+        en_stock=True
+    )
+
+    db.add(pieza)
+    db.commit()
+
+    return RedirectResponse(f"/item/{nuevo_id}", status_code=303)
+    )
