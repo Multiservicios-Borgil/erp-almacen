@@ -186,19 +186,40 @@ Este aparato está marcado para reparación. El despiece está bloqueado.
 <h3 style="margin-top:30px">Cambiar Estado</h3>
 
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="FUNCIONA">FUNCIONA</button>
+<button type="submit" name="nuevo_estado" value="FUNCIONA">
+FUNCIONA
+</button>
 </form>
 
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="ESTROPEADO">ESTROPEADO</button>
+<button type="submit" name="nuevo_estado" value="ESTROPEADO">
+ESTROPEADO
+</button>
 </form>
 
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="REPARADO">REPARADO</button>
+<button type="submit" name="nuevo_estado" value="REPARADO">
+REPARADO
+</button>
 </form>
 
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="PREPARADO_VENTA">PREPARADO PARA VENTA</button>
+<button type="submit" name="nuevo_estado" value="VENTA_SEGUNDA_MANO">
+PREPARAR VENTA SEGUNDA MANO
+</button>
+</form>
+
+<form method="post" action="/cambiar_estado_web/{{item.id}}">
+<button type="submit" name="nuevo_estado" value="VENTA_REACONDICIONADO">
+PREPARAR VENTA REACONDICIONADO
+</button>
+</form>
+
+<form method="post" action="/cambiar_estado_web/{{item.id}}">
+<button type="submit" name="nuevo_estado" value="VENTA_NUEVO">
+PREPARAR VENTA NUEVO
+</button>
+</form>
 </form>
 <a href="/print_qr/{{item.id}}" target="_blank">
 <button>Imprimir QR</button>

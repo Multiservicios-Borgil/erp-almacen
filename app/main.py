@@ -75,13 +75,31 @@ def verificar_roles_permitidos(*roles_permitidos):
 # ---------------- ESTADOS ----------------
 
 TRANSICIONES = {
+
     "PENDIENTE_DIAGNOSTICO": ["FUNCIONA", "ESTROPEADO"],
+
     "REGISTRADO": ["FUNCIONA", "ESTROPEADO"],
-    "FUNCIONA": ["PREPARADO_VENTA"],
-    "ESTROPEADO": ["REPARADO", "PARA_DESPIECE"],
-    "REPARADO": ["PREPARADO_VENTA"],
-    "PREPARADO_VENTA": ["VENDIDO"],
-    "PARA_DESPIECE": ["DESPIEZADO"],
+
+    "FUNCIONA": [
+        "VENTA_SEGUNDA_MANO",
+        "VENTA_REACONDICIONADO",
+        "VENTA_NUEVO"
+    ],
+
+    "ESTROPEADO": [
+        "REPARADO",
+        "PARA_DESPIECE"
+    ],
+
+    "REPARADO": [
+        "VENTA_SEGUNDA_MANO",
+        "VENTA_REACONDICIONADO",
+        "VENTA_NUEVO"
+    ],
+
+    "VENTA_SEGUNDA_MANO": ["VENDIDO"],
+    "VENTA_REACONDICIONADO": ["VENDIDO"],
+    "VENTA_NUEVO": ["VENDIDO"]
 }
 
 # ---------------- CREAR ITEM ----------------
