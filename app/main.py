@@ -13,6 +13,9 @@ import csv
 import io
 import datetime
 import uuid
+import qrcode
+from fastapi.responses import StreamingResponse
+import io
 
 
 from .database import SessionLocal, engine
@@ -656,3 +659,15 @@ def print_pieza(item_id: str, request: Request, db: Session = Depends(get_db)):
         "print_pieza.html",
         {"request": request, "pieza": pieza}
     )
+@app.get("/qr/{item_id}")
+def generar_qr(item_id: str):
+
+    url = f"https://erp-almacen.onrender.com/item/{item_id}"
+
+    img = qrcode.make(url)
+
+    buf = io.BytesIO()
+    img.save(buf)
+    buf.seek(0)
+
+    return StreamingResponse(buf, media_type="image/png")
