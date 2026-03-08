@@ -88,6 +88,7 @@ class ItemCreate(BaseModel):
     sku_id: int
     numero_serie: str
     proveedor_id: int
+    modelo = Column(String, nullable=True)
     fecha_compra: str
     origen: str
     motivo_retirada: str | None = None
