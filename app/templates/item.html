@@ -70,13 +70,14 @@ Vender
 
 
 {% if item.decision_tecnica == "REPARAR" %}
-
 <div style="background:#d4edda;padding:12px;border-radius:8px;margin-bottom:15px;">
 <b>Reparación en curso</b><br>
 Este aparato está marcado para reparación. El despiece está bloqueado.
 </div>
-
 {% endif %}
+
+
+{% if not item.parent_id and item.decision_tecnica != "REPARAR" %}
 
 <h3 style="margin-top:30px">Crear piezas rápidas</h3>
 
@@ -137,14 +138,7 @@ Este aparato está marcado para reparación. El despiece está bloqueado.
 
 
 
-{% if item.decision_tecnica == "REPARAR" %}
-
-<div style="background:#d4edda;padding:12px;border-radius:8px;margin-bottom:15px;">
-<b>Reparación en curso</b><br>
-Este aparato está marcado para reparación. El despiece está bloqueado.
-</div>
-
-{% endif %}
+{% if not item.parent_id %}
 
 <h3 style="margin-top:30px">Piezas del aparato</h3>
 
@@ -189,6 +183,5 @@ Este aparato está marcado para reparación. El despiece está bloqueado.
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
 <button type="submit" name="nuevo_estado" value="PREPARADO_VENTA">PREPARADO PARA VENTA</button>
 </form>
-
 
 {% endblock %}
