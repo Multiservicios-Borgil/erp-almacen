@@ -262,7 +262,7 @@ def crear_item_web(
     request: Request,
     familia_id: int = Form(...),
     numero_serie: str = Form(...),
-    modelo: str = Form(None)
+    modelo: str = Form(None),
     origen: str = Form(...),
     diagnostico_inicial: str = Form(None),
     db: Session = Depends(get_db)
