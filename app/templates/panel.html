@@ -1,18 +1,51 @@
 {% extends "base.html" %}
-<h3>Buscar artículo</h3>
 
-<form action="/buscar" method="get">
+{% block title %}Panel{% endblock %}
+
+{% block content %}
+
+<h2>Panel Principal</h2>
+
+<a href="/nuevo" class="btn">➕ Nuevo Electrodoméstico</a>
+
+<a href="/nueva_pieza">
+<button style="width:100%;padding:20px;margin-top:10px">
+Crear pieza directa
+</button>
+</a>
+
+<a href="/stock_view" class="btn">📦 Ver Stock</a>
+
+<a href="/scan" class="btn">📷 Escanear QR</a>
+
+<a href="/export_csv" class="btn">Exportar CSV</a>
+
+
+<hr style="margin:30px 0;">
+
+
+<h3>Buscar piezas</h3>
+
 <a href="/buscar_piezas">
-<button style="width:100%;padding:20px">
+<button style="width:100%;padding:20px;margin-bottom:10px">
 Buscar piezas
 </button>
 </a>
 
+
+<h3>Buscar electrodomésticos</h3>
+
 <a href="/buscar_aparatos">
-<button style="width:100%;padding:20px">
+<button style="width:100%;padding:20px;margin-bottom:10px">
 Buscar electrodomésticos
 </button>
 </a>
+
+
+<h3>Buscar artículo por ID o serie</h3>
+
+<form action="/buscar" method="get">
+
 <input 
 type="text" 
 name="q" 
@@ -24,20 +57,5 @@ Buscar
 </button>
 
 </form>
-
-{% block title %}Panel{% endblock %}
-
-{% block content %}
-<h2>Panel Principal</h2>
-
-<a href="/nuevo" class="btn">➕ Nuevo Electrodoméstico</a>
-<a href="/stock_view" class="btn">📦 Ver Stock</a>
-<a href="/scan" class="btn">📷 Escanear QR</a>
-<a href="/export_csv" class="btn">Exportar csv</a>
-<a href="/nueva_pieza">
-<button style="width:100%;padding:20px">
-Crear pieza directa
-</button>
-</a>
 
 {% endblock %}
