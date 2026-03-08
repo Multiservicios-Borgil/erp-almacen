@@ -498,39 +498,36 @@ def export_csv(db: Session = Depends(get_db)):
         headers={"Content-Disposition": "attachment; filename=stock.csv"}
     )
 
-@app.get("/buscar_piezas")
+@app.get("/buscar_piezas", response_class=HTMLResponse)
 def buscar_piezas(
     request: Request,
-    nombre_pieza: str = "",
     familia_id: int = None,
+    modelo: str = "",
+    nombre_pieza: str = "",
     db: Session = Depends(get_db)
 ):
 
-    Pieza = aliased(Item)
-    Aparato = aliased(Item)
-
-    query = (
-        db.query(Pieza)
-        .join(Aparato, Pieza.parent_id == Aparato.id)
-        .filter(
-            Pieza.en_stock == True,
-            Pieza.parent_id != None
-        )
-    )
-
-    if nombre_pieza:
-        query = query.filter(Pieza.nombre_pieza.ilike(f"%{nombre_pieza}%"))
+    query = db.query(Item).filter(Item.parent_id != None)
 
     if familia_id:
-        query = query.filter(Aparato.familia_id == familia_id)
+        query = query.filter(Item.familia_id == familia_id)
 
-    resultados = query.all()
+    if modelo:
+        query = query.filter(Item.modelo.ilike(f"%{modelo}%"))
+
+    if nombre_pieza:
+        query = query.filter(Item.nombre_pieza.ilike(f"%{nombre_pieza}%"))
+
+    piezas = query.all()
+
+    familias = db.query(Familia).all()
 
     return templates.TemplateResponse(
         "buscar_piezas.html",
         {
             "request": request,
-            "items": resultados
+            "piezas": piezas,
+            "familias": familias
         }
     )
 @app.get("/crear_pieza_directa/{item_id}/{nombre}")
