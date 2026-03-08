@@ -703,6 +703,7 @@ def buscar_piezas_avanzado(
             "familias": familias
         }
     )
+
 @app.get("/buscar_aparatos", response_class=HTMLResponse)
 def buscar_aparatos(
     request: Request,
