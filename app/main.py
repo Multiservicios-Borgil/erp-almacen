@@ -33,7 +33,7 @@ FAMILIAS_PREDEFINIDAS = [
     "Placa vitrocerámica",
     "Campana extractora"
 ]
- PIEZAS_POR_FAMILIA = {
+PIEZAS_POR_FAMILIA = {
 
     "Lavadora": [
         {"nombre": "Puerta", "medida": True},
