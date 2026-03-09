@@ -72,6 +72,7 @@ class Item(Base):
     familia_id = Column(Integer, ForeignKey("familias.id"))
     sku_id = Column(Integer, ForeignKey("productos.id"))
     numero_serie = Column(String)
+    marca = Column(String, nullable=True)
     proveedor_id = Column(Integer, ForeignKey("proveedores.id"))
     precio_compra = Column(Float, nullable=True)
     precio_venta = Column(Float, nullable=True)

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Buscar piezas{% endblock %}
+
+{% block content %}
+
+<h2>Buscar piezas</h2>
+
+<form method="get">
+
+<label>Marca</label>
+<input type="text" name="marca">
+
+<br><br>
+
+<label>Modelo</label>
+<input type="text" name="modelo">
+
+<br><br>
+
+<label>Tipo de pieza</label>
+<input type="text" name="nombre_pieza">
+
+<br><br>
+
+<button type="submit">Buscar</button>
+
+</form>
+
+<hr>
+
+<h3>Resultados</h3>
+
+{% for p in piezas %}
+
+<div style="background:white;padding:10px;margin:10px 0;border-radius:8px;">
+
+<b>{{p.nombre_pieza}}</b><br>
+
+Marca: {{p.marca}} <br>
+
+Modelo: {{p.modelo}} <br>
+
+ID: {{p.id}} <br>
+
+<a href="/item/{{p.id}}">Ver ficha</a>
+
+</div>
+
+{% endfor %}
+
+{% endblock %}

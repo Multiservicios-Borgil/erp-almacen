@@ -283,6 +283,7 @@ def crear_item_web(
     request: Request,
     familia_id: int = Form(...),
     numero_serie: str = Form(...),
+    marca: str = Form(None),
     modelo: str = Form(None),
     origen: str = Form(...),
     diagnostico_inicial: str = Form(None),
@@ -311,6 +312,7 @@ def crear_item_web(
         id=nuevo_id,
         familia_id=familia_id,
         numero_serie=numero_serie,
+        marca=marca,
         modelo=modelo,
         estado_actual="REGISTRADO",
         origen=origen,
@@ -748,5 +750,35 @@ def buscar_aparatos(
             "request": request,
             "aparatos": aparatos,
             "familias": familias
+        }
+    )
+
+@app.get("/buscar_piezas", response_class=HTMLResponse)
+def buscar_piezas(
+    request: Request,
+    marca: str = "",
+    modelo: str = "",
+    nombre_pieza: str = "",
+    db: Session = Depends(get_db)
+):
+
+    query = db.query(Item).filter(Item.parent_id != None)
+
+    if marca:
+        query = query.filter(Item.marca.ilike(f"%{marca}%"))
+
+    if modelo:
+        query = query.filter(Item.modelo.ilike(f"%{modelo}%"))
+
+    if nombre_pieza:
+        query = query.filter(Item.nombre_pieza.ilike(f"%{nombre_pieza}%"))
+
+    piezas = query.all()
+
+    return templates.TemplateResponse(
+        "buscar_piezas.html",
+        {
+            "request": request,
+            "piezas": piezas
         }
     )
