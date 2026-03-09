@@ -16,6 +16,17 @@
 <b>Estado:</b> {{ item.estado_actual }} <br>
 <b>Origen:</b> {{ item.origen }} <br>
 <b>Número de serie:</b> {{ item.numero_serie }} <br>
+{% if item.diagnostico_inicial %}
+
+<div style="background:#fff3cd;padding:12px;border-radius:8px;margin-top:10px;margin-bottom:10px">
+
+<b>Diagnóstico inicial</b><br>
+
+{{ item.diagnostico_inicial }}
+
+</div>
+
+{% endif %}
 {% if item.modelo %}
 <b>Modelo:</b> {{ item.modelo }} <br>
 {% endif %}
@@ -100,31 +111,22 @@ Este aparato está marcado para reparación. El despiece está bloqueado.
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
 
-<a href="/crear_pieza_directa/{{item.id}}/motor">
-<button style="padding:18px;width:100%">Motor</button>
+<h3>Crear piezas</h3>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+
+{% for pieza in piezas_disponibles %}
+
+<a href="/crear_pieza_directa/{{item.id}}/{{pieza.nombre}}">
+<button style="padding:18px;width:100%">
+{{pieza.nombre}}
+</button>
 </a>
 
-<a href="/crear_pieza_directa/{{item.id}}/bomba">
-<button style="padding:18px;width:100%">Bomba</button>
-</a>
-
-<a href="/crear_pieza_directa/{{item.id}}/placa">
-<button style="padding:18px;width:100%">Placa</button>
-</a>
-
-<a href="/crear_pieza_directa/{{item.id}}/puerta">
-<button style="padding:18px;width:100%">Puerta</button>
-</a>
-
-<a href="/crear_pieza_directa/{{item.id}}/tambor">
-<button style="padding:18px;width:100%">Tambor</button>
-</a>
-
-<a href="/crear_pieza_directa/{{item.id}}/electrovalvula">
-<button style="padding:18px;width:100%">Electroválvula</button>
-</a>
+{% endfor %}
 
 </div>
+
 
 {% endif %}
 

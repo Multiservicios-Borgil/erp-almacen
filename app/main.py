@@ -33,7 +33,62 @@ FAMILIAS_PREDEFINIDAS = [
     "Placa vitrocerámica",
     "Campana extractora"
 ]
+ PIEZAS_POR_FAMILIA = {
 
+    "Lavadora": [
+        {"nombre": "Puerta", "medida": True},
+        {"nombre": "Placa electronica", "medida": False},
+        {"nombre": "Motor", "medida": False},
+        {"nombre": "Frontal", "medida": False},
+        {"nombre": "Cajetin", "medida": False},
+        {"nombre": "Bomba desague", "medida": False}
+    ],
+
+    "Lavavajillas": [
+        {"nombre": "Resistencia", "medida": False},
+        {"nombre": "Bomba", "medida": False},
+        {"nombre": "Resistencia-Bomba", "medida": False},
+        {"nombre": "Cesta Superior", "medida": False},
+        {"nombre": "Cesta Inferior", "medida": False},
+        {"nombre": "Frontal", "medida": False},
+        {"nombre": "Placa Frontal", "medida": False},
+        {"nombre": "Placa Motor", "medida": False},
+        {"nombre": "Tubo aquastop", "medida": False}
+    ],
+
+    "Frigorífico": [
+        {"nombre": "Placa", "medida": False},
+        {"nombre": "Placa-Motor", "medida": False},
+        {"nombre": "Arrancador", "medida": False},
+        {"nombre": "Bandeja", "medida": True},
+        {"nombre": "Botellero", "medida": False},
+        {"nombre": "Cajon lateral", "medida": False},
+        {"nombre": "Cajon Congelador Superior", "medida": True},
+        {"nombre": "Cajon Congelador Medio", "medida": True},
+        {"nombre": "Cajon Congelador Inferior", "medida": True},
+        {"nombre": "Cajon Izd frigo", "medida": True},
+        {"nombre": "Cajon derecho frigo", "medida": True}
+    ],
+
+    "Vitroceramica": [
+        {"nombre": "Resistencia", "medida": True},
+        {"nombre": "Placa", "medida": False}
+    ],
+
+    "Placa de Induccion": [
+        {"nombre": "Inductores", "medida": True},
+        {"nombre": "Placa", "medida": False}
+    ],
+
+    "Horno": [
+        {"nombre": "Resistencia Superior", "medida": False},
+        {"nombre": "Resistencia Inferior", "medida": False},
+        {"nombre": "Puerta", "medida": False},
+        {"nombre": "Tirador", "medida": False},
+        {"nombre": "Selector", "medida": False},
+        {"nombre": "Placa", "medida": False}
+    ]
+}
 
 def crear_familias_predeterminadas():
     db = SessionLocal()
@@ -340,14 +395,21 @@ def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
 
     hijos = db.query(Item).filter(Item.parent_id == item_id).all()
 
+    piezas_disponibles = []
+
+    if item and item.familia:
+        piezas_disponibles = PIEZAS_POR_FAMILIA.get(item.familia.nombre, [])
+
     return templates.TemplateResponse(
         "item.html",
         {
             "request": request,
             "item": item,
-            "hijos": hijos
+            "hijos": hijos,
+            "piezas_disponibles": piezas_disponibles
         }
     )
+
 @app.post("/cambiar_estado_web/{item_id}")
 def cambiar_estado_web(
     item_id: str,
@@ -491,23 +553,48 @@ def export_csv(db: Session = Depends(get_db)):
 
     writer.writerow([
         "ID",
+        "Tipo",
         "Familia",
-        "Serie",
+        "Marca",
+        "Modelo",
+        "Numero serie",
+        "Nombre pieza",
+        "Medidas",
         "Estado",
         "Origen",
         "Precio compra",
-        "Albaran"
+        "Precio venta",
+        "Numero albaran",
+        "Diagnostico inicial",
+        "Decision tecnica",
+        "Aparato origen",
+        "En stock",
+        "Fecha creacion"
     ])
 
     for i in items:
+
+        tipo = "PIEZA" if i.parent_id else "ELECTRODOMESTICO"
+
         writer.writerow([
             i.id,
+            tipo,
             i.familia.nombre if i.familia else "",
+            i.marca,
+            i.modelo,
             i.numero_serie,
+            i.nombre_pieza,
+            i.medidas,
             i.estado_actual,
             i.origen,
             i.precio_compra,
-            i.numero_albaran
+            i.precio_venta,
+            i.numero_albaran,
+            i.diagnostico_inicial,
+            i.decision_tecnica,
+            i.parent_id,
+            i.en_stock,
+            i.fecha_creacion
         ])
 
     output.seek(0)
@@ -515,7 +602,9 @@ def export_csv(db: Session = Depends(get_db)):
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=stock.csv"}
+        headers={
+            "Content-Disposition": "attachment; filename=almacen_completo.csv"
+        }
     )
 
 @app.get("/buscar_piezas", response_class=HTMLResponse)
