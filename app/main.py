@@ -612,6 +612,7 @@ def buscar_piezas(
     request: Request,
     familia: str = "",
     nombre_pieza: str = "",
+    modelo: str = "",
     db: Session = Depends(get_db)
 ):
 
@@ -622,6 +623,9 @@ def buscar_piezas(
 
     if nombre_pieza:
         query = query.filter(Item.nombre_pieza == nombre_pieza)
+
+    if modelo:
+        query = query.filter(Item.modelo.ilike(f"%{modelo}%"))
 
     piezas = query.all()
 
