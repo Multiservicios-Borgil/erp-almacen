@@ -2,27 +2,30 @@
 
 <form method="get">
 
-<label>Familia</label>
+<label>Electrodoméstico</label>
 
-<select name="familia_id">
+<select name="familia" id="familia">
 
-<option value="">Todas</option>
+<option value="">Seleccionar</option>
 
-{% for f in familias %}
-<option value="{{f.id}}">{{f.nombre}}</option>
-{% endfor %}
+<option value="Lavadora">Lavadora</option>
+<option value="Lavavajillas">Lavavajillas</option>
+<option value="Frigorífico">Frigorífico</option>
+<option value="Vitroceramica">Vitroceramica</option>
+<option value="Placa de Induccion">Placa de Induccion</option>
+<option value="Horno">Horno</option>
 
 </select>
 
 <br><br>
 
-<label>Modelo</label>
-<input type="text" name="modelo">
+<label>Tipo de pieza</label>
 
-<br><br>
+<select name="nombre_pieza" id="pieza">
 
-<label>Nombre pieza</label>
-<input type="text" name="nombre_pieza">
+<option value="">Seleccionar pieza</option>
+
+</select>
 
 <br><br>
 
@@ -48,3 +51,38 @@ Modelo: {{p.modelo}} <br>
 </div>
 
 {% endfor %}
+<script>
+
+document.getElementById("familia").addEventListener("change", function(){
+
+    const familia = this.value
+
+    fetch("/piezas_por_familia/" + familia)
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        const select = document.getElementById("pieza")
+
+        select.innerHTML = ""
+
+        data.forEach(pieza => {
+
+            const option = document.createElement("option")
+
+            option.value = pieza
+
+            option.text = pieza
+
+            select.appendChild(option)
+
+        })
+
+    })
+
+})
+
+</script>
+
+{% endblock %}
