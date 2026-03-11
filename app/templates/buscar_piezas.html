@@ -1,3 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Buscar piezas{% endblock %}
+
+{% block content %}
+
 <h2>Buscar piezas</h2>
 
 <form method="get">
@@ -33,6 +39,7 @@
 
 </form>
 
+<hr>
 
 <h3>Resultados</h3>
 
@@ -42,15 +49,15 @@
 
 <b>{{p.nombre_pieza}}</b><br>
 
-ID: {{p.id}} <br>
-
+Marca: {{p.marca}} <br>
 Modelo: {{p.modelo}} <br>
 
-<a href="/item/{{p.id}}">Ver pieza</a>
+<a href="/item/{{p.id}}">Ver ficha</a>
 
 </div>
 
 {% endfor %}
+
 <script>
 
 document.getElementById("familia").addEventListener("change", function(){
@@ -65,7 +72,7 @@ document.getElementById("familia").addEventListener("change", function(){
 
         const select = document.getElementById("pieza")
 
-        select.innerHTML = ""
+        select.innerHTML = '<option value="">Seleccionar pieza</option>'
 
         data.forEach(pieza => {
 
