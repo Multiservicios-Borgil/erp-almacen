@@ -1,10 +1,16 @@
-<h2>Nueva pieza</h2>
+{% extends "base.html" %}
+
+{% block title %}Crear pieza{% endblock %}
+
+{% block content %}
+
+<h2>Crear pieza</h2>
 
 <form method="post" action="/crear_pieza_directa">
 
 <label>Electrodoméstico</label>
 
-<select id="familia">
+<select name="familia" id="familia">
 
 <option value="">Seleccionar</option>
 
@@ -27,33 +33,67 @@
 
 </select>
 
-<label>Familia</label>
+<br><br>
 
-<select name="familia_id">
+<label>Marca</label>
 
-{% for f in familias %}
-<option value="{{f.id}}">{{f.nombre}}</option>
-{% endfor %}
-
-</select>
+<input type="text" name="marca" style="width:100%;padding:10px;">
 
 <br><br>
 
-<label>Nombre pieza</label>
-<input type="text" name="nombre_pieza" required>
+<label>Modelo</label>
+
+<input type="text" name="modelo" style="width:100%;padding:10px;">
 
 <br><br>
 
-<label>Modelo aparato</label>
-<input type="text" name="modelo">
+<label>Medidas (si aplica)</label>
+
+<input type="text" name="medidas" style="width:100%;padding:10px;">
 
 <br><br>
 
-<label>Medidas</label>
-<input type="text" name="medidas">
-
-<br><br>
-
-<button type="submit">Crear pieza</button>
+<button type="submit" style="padding:15px;width:100%">
+Crear pieza
+</button>
 
 </form>
+
+
+<script>
+
+document.getElementById("familia").addEventListener("change", function(){
+
+    const familia = this.value
+
+    if(!familia) return
+
+    fetch("/piezas_por_familia/" + familia)
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        const select = document.getElementById("pieza")
+
+        select.innerHTML = '<option value="">Seleccionar pieza</option>'
+
+        data.forEach(pieza => {
+
+            const option = document.createElement("option")
+
+            option.value = pieza
+
+            option.text = pieza
+
+            select.appendChild(option)
+
+        })
+
+    })
+
+})
+
+</script>
+
+{% endblock %}
