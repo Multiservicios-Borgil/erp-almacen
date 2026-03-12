@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<style>
+
+@page {
+size: 55mm 32mm;
+margin: 0;
+}
+
+body{
+width:55mm;
+height:32mm;
+font-family:Arial;
+text-align:center;
+margin:0;
+padding:2mm;
+}
+
+.id{
+font-size:14px;
+font-weight:bold;
+}
+
+.qr{
+margin-top:2mm;
+}
+
+</style>
+
+</head>
+
+<body onload="window.print()">
+
+<div class="id">
+
+{{item.id}}
+
+</div>
+
+<img class="qr" src="/qr/{{item.id}}" width="80">
+
+</body>
+
+</html>

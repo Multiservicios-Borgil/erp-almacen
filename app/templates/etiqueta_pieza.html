@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<style>
+
+@page {
+size: 55mm 32mm;
+margin: 0;
+}
+
+body{
+width:55mm;
+height:32mm;
+margin:0;
+padding:2mm;
+font-family:Arial;
+font-size:8px;
+}
+
+.container{
+display:flex;
+align-items:center;
+}
+
+.qr{
+width:20mm;
+}
+
+.info{
+margin-left:2mm;
+width:30mm;
+}
+
+.id{
+font-size:10px;
+font-weight:bold;
+}
+
+.pieza{
+font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body onload="window.print()">
+
+<div class="container">
+
+<div class="qr">
+
+<img src="/qr/{{pieza.id}}" width="70">
+
+</div>
+
+<div class="info">
+
+<div class="id">
+{{pieza.id}}
+</div>
+
+<div class="pieza">
+{{pieza.nombre_pieza}}
+</div>
+
+<div>
+{{pieza.familia.nombre}}
+</div>
+
+<div>
+{{pieza.modelo}}
+</div>
+
+{% if pieza.medidas %}
+<div>
+{{pieza.medidas}}
+</div>
+{% endif %}
+
+</div>
+
+</div>
+
+</body>
+
+</html>

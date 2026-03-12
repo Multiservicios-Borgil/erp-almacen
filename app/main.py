@@ -778,6 +778,7 @@ def generar_qr(item_id: str):
     buf.seek(0)
 
     return StreamingResponse(buf, media_type="image/png")
+
 @app.get("/buscar_piezas_avanzado", response_class=HTMLResponse)
 def buscar_piezas_avanzado(
     request: Request,
@@ -876,3 +877,42 @@ def piezas_por_familia(familia: str):
     piezas = PIEZAS_POR_FAMILIA.get(familia, [])
 
     return [p["nombre"] for p in piezas]
+
+@app.get("/etiqueta_pieza/{item_id}", response_class=HTMLResponse)
+def etiqueta_pieza(item_id: str, request: Request, db: Session = Depends(get_db)):
+
+    pieza = db.query(Item).filter(Item.id == item_id).first()
+
+    return templates.TemplateResponse(
+        "etiqueta_pieza.html",
+        {
+            "request": request,
+            "pieza": pieza
+        }
+    )
+
+@app.get("/etiqueta_aparato/{item_id}", response_class=HTMLResponse)
+def etiqueta_aparato(item_id: str, request: Request, db: Session = Depends(get_db)):
+
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    return templates.TemplateResponse(
+        "etiqueta_aparato.html",
+        {
+            "request": request,
+            "item": item
+        }
+    )
+
+@app.get("/etiqueta_pieza/{item_id}", response_class=HTMLResponse)
+def etiqueta_pieza(item_id: str, request: Request, db: Session = Depends(get_db)):
+
+    pieza = db.query(Item).filter(Item.id == item_id).first()
+
+    return templates.TemplateResponse(
+        "etiqueta_pieza.html",
+        {
+            "request": request,
+            "pieza": pieza
+        }
+    )
