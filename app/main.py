@@ -766,10 +766,15 @@ def print_pieza(item_id: str, request: Request, db: Session = Depends(get_db)):
         "print_pieza.html",
         {"request": request, "pieza": pieza}
     )
-@app.get("/qr/{item_id}")
-def generar_qr(item_id: str):
+import qrcode
+import io
+from fastapi.responses import StreamingResponse
 
-    url = f"https://erp-almacen.onrender.com/item/{item_id}"
+
+@app.get("/qr/{item_id}")
+def generar_qr(item_id: str, request: Request):
+
+    url = str(request.base_url) + "item/" + item_id
 
     img = qrcode.make(url)
 
