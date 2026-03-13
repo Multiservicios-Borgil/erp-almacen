@@ -20,6 +20,12 @@ import io
 
 from .database import SessionLocal, engine
 from .models import Base, Item, Familia
+from supabase import create_client
+
+SUPABASE_URL = "https://vmwetkguivvuiehchuax.supabase.co"
+SUPABASE_KEY = "ocCo11SS61o1lYP1"
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 FAMILIAS_PREDEFINIDAS = [
     "Lavadora",
@@ -921,3 +927,54 @@ def etiqueta_pieza(item_id: str, request: Request, db: Session = Depends(get_db)
             "pieza": pieza
         }
     )
+
+from fastapi import UploadFile, File
+
+@app.post("/subir_imagen/{item_id}")
+async def subir_imagen(
+    item_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+
+    # comprobar cuántas fotos tiene ya
+    count = db.query(func.count()).select_from(Imagen).filter(Imagen.item_id == item_id).scalar()
+
+    if count >= 5:
+        return {"error": "Máximo 5 fotos"}
+
+    filename = f"{item_id}_{count+1}.jpg"
+
+    content = await file.read()
+
+    supabase.storage.from_("imagenes").upload(filename, content)
+
+    url = f"{SUPABASE_URL}/storage/v1/object/public/imagenes/{filename}"
+
+    imagen = Imagen(item_id=item_id, url=url, orden=count+1)
+
+    db.add(imagen)
+    db.commit()
+
+    return {"ok": True}
+
+@app.get("/imagenes/{item_id}")
+def ver_imagenes(item_id: str, db: Session = Depends(get_db)):
+
+    fotos = db.query(Imagen).filter(Imagen.item_id == item_id).order_by(Imagen.orden).all()
+
+    return fotos
+
+@app.post("/borrar_imagen/{imagen_id}")
+def borrar_imagen(imagen_id: int, db: Session = Depends(get_db)):
+
+    imagen = db.query(Imagen).filter(Imagen.id == imagen_id).first()
+
+    filename = imagen.url.split("/")[-1]
+
+    supabase.storage.from_("imagenes").remove([filename])
+
+    db.delete(imagen)
+    db.commit()
+
+    return {"ok": True}

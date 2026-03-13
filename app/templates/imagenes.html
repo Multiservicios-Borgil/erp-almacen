@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Fotos</h2>
+
+{% for f in fotos %}
+
+<div>
+
+<img src="{{f.url}}" width="250">
+
+<form method="post" action="/borrar_imagen/{{f.id}}">
+<button>Borrar</button>
+</form>
+
+<a href="{{f.url}}" download>
+<button>Descargar</button>
+</a>
+
+</div>
+
+{% endfor %}
+
+{% endblock %}
