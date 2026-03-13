@@ -21,12 +21,10 @@ import requests
 
 from .database import SessionLocal, engine
 from .models import Base, Item, Familia
-from supabase import create_client
 
 SUPABASE_URL = "https://vmwetkguivvuiehchuax.supabase.co"
 SUPABASE_KEY = "ocCo11SS61o1lYP1"
 
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 FAMILIAS_PREDEFINIDAS = [
     "Lavadora",
