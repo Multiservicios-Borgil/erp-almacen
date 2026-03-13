@@ -124,3 +124,21 @@ class Venta(Base):
     fecha = Column(DateTime, default=datetime.datetime.utcnow)
 
     tipo_venta = relationship("TipoVenta")
+
+from sqlalchemy import Column, Integer, String, DateTime
+import datetime
+
+
+class Imagen(Base):
+
+    __tablename__ = "imagenes"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    item_id = Column(String, index=True)
+
+    url = Column(String)
+
+    orden = Column(Integer)
+
+    fecha = Column(DateTime, default=datetime.datetime.utcnow)

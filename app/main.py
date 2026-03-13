@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from fastapi import Header
 from .models import Evento, Venta
-from .models import Base, Item, Familia
+from .models import Base, Item, Familia, Imagen
 
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy import func
