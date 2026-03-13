@@ -15,7 +15,8 @@ import datetime
 import uuid
 import qrcode
 from fastapi.responses import StreamingResponse
-import io
+import requests
+
 
 
 from .database import SessionLocal, engine
@@ -937,21 +938,23 @@ async def subir_imagen(
     db: Session = Depends(get_db)
 ):
 
-    # comprobar cuántas fotos tiene ya
-    count = db.query(func.count()).select_from(Imagen).filter(Imagen.item_id == item_id).scalar()
+    contenido = await file.read()
 
-    if count >= 5:
-        return {"error": "Máximo 5 fotos"}
+    filename = f"{item_id}.jpg"
 
-    filename = f"{item_id}_{count+1}.jpg"
+    url = f"{SUPABASE_URL}/storage/v1/object/imagenes/{filename}"
 
-    content = await file.read()
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "image/jpeg"
+    }
 
-    supabase.storage.from_("imagenes").upload(filename, content)
+    requests.post(url, headers=headers, data=contenido)
 
-    url = f"{SUPABASE_URL}/storage/v1/object/public/imagenes/{filename}"
+    public_url = f"{SUPABASE_URL}/storage/v1/object/public/imagenes/{filename}"
 
-    imagen = Imagen(item_id=item_id, url=url, orden=count+1)
+    imagen = Imagen(item_id=item_id, url=public_url)
 
     db.add(imagen)
     db.commit()
