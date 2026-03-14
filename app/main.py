@@ -938,32 +938,56 @@ async def subir_imagen(
     db: Session = Depends(get_db)
 ):
 
+    from PIL import Image
+    import io
+    import requests
+
+    # comprobar cuántas fotos tiene ya
+    fotos_existentes = db.query(Imagen).filter(Imagen.item_id == item_id).count()
+
+    if fotos_existentes >= 5:
+        return {"error": "Máximo 5 fotos por artículo"}
+
+    numero = fotos_existentes + 1
+
+    filename = f"{item_id}_{numero}.jpg"
+
     contenido = await file.read()
 
-    filename = f"{item_id}.jpg"
+    # comprimir imagen
+    image = Image.open(io.BytesIO(contenido))
+    image = image.convert("RGB")
+
+    buffer = io.BytesIO()
+    image.save(buffer, format="JPEG", quality=70, optimize=True)
+
+    contenido_comprimido = buffer.getvalue()
 
     url = f"{SUPABASE_URL}/storage/v1/object/imagenes/{filename}"
 
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": file.content_type
+        "Content-Type": "image/jpeg"
     }
 
-    # IMPORTANTE: PUT
-    response = requests.put(url, headers=headers, data=contenido)
+    response = requests.put(url, headers=headers, data=contenido_comprimido)
 
     if response.status_code not in [200, 201]:
         return {"error": response.text}
 
     public_url = f"{SUPABASE_URL}/storage/v1/object/public/imagenes/{filename}"
 
-    imagen = Imagen(item_id=item_id, url=public_url)
+    imagen = Imagen(
+        item_id=item_id,
+        url=public_url,
+        orden=numero
+    )
 
     db.add(imagen)
     db.commit()
 
-    return {"ok": True}
+    return RedirectResponse(f"/imagenes/{item_id}", status_code=303)
 
 @app.get("/imagenes/{item_id}", response_class=HTMLResponse)
 def ver_imagenes(item_id: str, request: Request, db: Session = Depends(get_db)):
@@ -992,3 +1016,18 @@ def borrar_imagen(imagen_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"ok": True}
+
+@app.post("/actualizar_diagnostico/{item_id}")
+def actualizar_diagnostico(
+    item_id: str,
+    diagnostico: str = Form(...),
+    db: Session = Depends(get_db)
+):
+
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    item.diagnostico_inicial = diagnostico
+
+    db.commit()
+
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
