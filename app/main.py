@@ -23,7 +23,7 @@ from .database import SessionLocal, engine
 from .models import Base, Item, Familia
 
 SUPABASE_URL = "https://vmwetkguivvuiehchuax.supabase.co"
-SUPABASE_KEY = "ocCo11SS61o1lYP1"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtd2V0a2d1aXZ2dWllaGNodWF4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjMwNTE1MiwiZXhwIjoyMDg3ODgxMTUyfQ.J1tSVIgoDLOcKD0wj0SFua6UiNJfNH1LAPX3d_DHkPs"
 
 
 FAMILIAS_PREDEFINIDAS = [
