@@ -929,6 +929,8 @@ def etiqueta_pieza(item_id: str, request: Request, db: Session = Depends(get_db)
 
 from fastapi import UploadFile, File
 
+import requests
+
 @app.post("/subir_imagen/{item_id}")
 async def subir_imagen(
     item_id: str,
@@ -945,10 +947,14 @@ async def subir_imagen(
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "image/jpeg"
+        "Content-Type": file.content_type
     }
 
-    requests.post(url, headers=headers, data=contenido)
+    # IMPORTANTE: PUT
+    response = requests.put(url, headers=headers, data=contenido)
+
+    if response.status_code not in [200, 201]:
+        return {"error": response.text}
 
     public_url = f"{SUPABASE_URL}/storage/v1/object/public/imagenes/{filename}"
 
