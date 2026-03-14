@@ -965,12 +965,19 @@ async def subir_imagen(
 
     return {"ok": True}
 
-@app.get("/imagenes/{item_id}")
-def ver_imagenes(item_id: str, db: Session = Depends(get_db)):
+@app.get("/imagenes/{item_id}", response_class=HTMLResponse)
+def ver_imagenes(item_id: str, request: Request, db: Session = Depends(get_db)):
 
-    fotos = db.query(Imagen).filter(Imagen.item_id == item_id).order_by(Imagen.orden).all()
+    fotos = db.query(Imagen).filter(Imagen.item_id == item_id).all()
 
-    return fotos
+    return templates.TemplateResponse(
+        "imagenes.html",
+        {
+            "request": request,
+            "fotos": fotos,
+            "item_id": item_id
+        }
+    )
 
 @app.post("/borrar_imagen/{imagen_id}")
 def borrar_imagen(imagen_id: int, db: Session = Depends(get_db)):

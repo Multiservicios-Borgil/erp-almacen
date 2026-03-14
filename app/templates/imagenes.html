@@ -1,22 +1,32 @@
 {% extends "base.html" %}
 
+{% block title %}Fotos{% endblock %}
+
 {% block content %}
 
-<h2>Fotos</h2>
+<h2>Fotos del artículo {{item_id}}</h2>
+
+<a href="/item/{{item_id}}">
+<button>Volver a ficha</button>
+</a>
+
+<br><br>
 
 {% for f in fotos %}
 
-<div>
+<div style="margin-bottom:20px">
 
-<img src="{{f.url}}" width="250">
+<img src="{{f.url}}" width="300">
 
-<form method="post" action="/borrar_imagen/{{f.id}}">
-<button>Borrar</button>
-</form>
+<br><br>
 
 <a href="{{f.url}}" download>
 <button>Descargar</button>
 </a>
+
+<form method="post" action="/borrar_imagen/{{f.id}}">
+<button>Borrar</button>
+</form>
 
 </div>
 
