@@ -55,7 +55,7 @@ class Item(Base):
     modelo = Column(String, nullable=True)
     nombre_pieza = Column(String, nullable=True)
     medidas = Column(String, nullable=True)
-    diagnostico_inicial = Column(String, nullable=True)
+    diagnostico_inicial = Column(Text, nullable=True)
     coste_reparacion_estimado = Column(Float, nullable=True)
     decision_tecnica = Column(String, nullable=True)
     parent = relationship(
@@ -140,5 +140,16 @@ class Imagen(Base):
     url = Column(String)
 
     orden = Column(Integer)
+
+    fecha = Column(DateTime, default=datetime.datetime.utcnow)
+
+    class HistorialDiagnostico(Base):
+    __tablename__ = "historial_diagnostico"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    item_id = Column(String, index=True)
+
+    diagnostico = Column(Text)
 
     fecha = Column(DateTime, default=datetime.datetime.utcnow)

@@ -396,6 +396,10 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 @app.get("/item/{item_id}", response_class=HTMLResponse)
 def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
 
+    historial = db.query(HistorialDiagnostico)\
+    .filter(HistorialDiagnostico.item_id == item_id)\
+    .order_by(HistorialDiagnostico.fecha.desc())\
+    .all()
     item = db.query(Item).filter(Item.id == item_id).first()
 
     hijos = db.query(Item).filter(Item.parent_id == item_id).all()
@@ -411,6 +415,7 @@ def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
             "request": request,
             "item": item,
             "hijos": hijos,
+            "historial": historial,
             "piezas_disponibles": piezas_disponibles
         }
     )
@@ -1026,8 +1031,37 @@ def actualizar_diagnostico(
 
     item = db.query(Item).filter(Item.id == item_id).first()
 
+    if not item:
+        return HTMLResponse("<h2>Item no encontrado</h2>")
+
+    # guardar historial
+    historial = HistorialDiagnostico(
+        item_id=item_id,
+        diagnostico=diagnostico
+    )
+
+    db.add(historial)
+
+    # actualizar diagnóstico actual
     item.diagnostico_inicial = diagnostico
 
+    db.commit()
+
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+@app.post("/actualizar_diagnostico/{item_id}")
+def actualizar_diagnostico(
+    item_id: str,
+    diagnostico: str = Form(...),
+    db: Session = Depends(get_db)
+):
+
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    if not item:
+        return HTMLResponse("<h2>Item no encontrado</h2>")
+
+    item.diagnostico_inicial = diagnostico
     db.commit()
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)

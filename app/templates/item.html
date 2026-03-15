@@ -20,11 +20,37 @@
 
 <div style="background:#fff3cd;padding:12px;border-radius:8px;margin-top:10px;margin-bottom:10px">
 
-<b>Diagnóstico inicial</b><br>
+<<h3>Comentario técnico</h3>
 
-{{ item.diagnostico_inicial }}
+<form method="post" action="/actualizar_diagnostico/{{item.id}}">
+
+<textarea 
+name="diagnostico"
+style="width:100%;height:120px;padding:10px;border-radius:8px"
+placeholder="Observaciones, diagnóstico, piezas dañadas..."
+>{{ item.diagnostico_inicial or "" }}</textarea>
+
+<h3>Historial de diagnóstico</h3>
+
+{% for h in historial %}
+
+<div style="background:#f5f5f5;padding:10px;margin-bottom:8px;border-radius:8px">
+
+<b>{{ h.fecha.strftime("%d/%m/%Y %H:%M") }}</b><br>
+
+{{ h.diagnostico }}
 
 </div>
+
+{% endfor %}
+
+<br><br>
+
+<button type="submit">
+Guardar comentario
+</button>
+
+</form>
 
 {% endif %}
 {% if item.modelo %}
