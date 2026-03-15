@@ -402,20 +402,14 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 @app.get("/item/{item_id}", response_class=HTMLResponse)
 def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
 
-    historial = (
-        db.query(HistorialDiagnostico)
-        .filter(HistorialDiagnostico.item_id == item_id)
-        .order_by(HistorialDiagnostico.fecha.desc())
-        .all()
-    )
     item = db.query(Item).filter(Item.id == item_id).first()
 
     hijos = db.query(Item).filter(Item.parent_id == item_id).all()
 
-    piezas_disponibles = []
-
-    if item and item.familia:
-        piezas_disponibles = PIEZAS_POR_FAMILIA.get(item.familia.nombre, [])
+    historial = db.query(HistorialDiagnostico)\
+        .filter(HistorialDiagnostico.item_id == item_id)\
+        .order_by(HistorialDiagnostico.fecha.desc())\
+        .all()
 
     return templates.TemplateResponse(
         "item.html",
@@ -423,9 +417,8 @@ def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
             "request": request,
             "item": item,
             "hijos": hijos,
-            "historial": historial,
-            "piezas_disponibles": piezas_disponibles,
-        },
+            "historial": historial
+        }
     )
 
 
