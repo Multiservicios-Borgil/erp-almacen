@@ -285,6 +285,18 @@ PREPARAR VENTA REACONDICIONADO
 PREPARAR VENTA NUEVO
 </button>
 </form>
+
+<form method="post" action="/cambiar_estado_web/{{item.id}}">
+<button type="submit" name="nuevo_estado" value="PREPARAR_GOLPEADO_VENTA_NUEVO">
+PREPARAR GOLPEADO VENTA NUEVO
+</button>
+</form>
+
+<form method="post" action="/cambiar_estado_web/{{item.id}}">
+<button type="submit" name="nuevo_estado" value="PREPARAR_GOLPEADO_REACONDICIONADO">
+PREPARAR GOLPEADO VENTA REACONDICIONADO
+</button>
+</form>
 </form>
 <a href="/print_qr/{{item.id}}" target="_blank">
 <button>Imprimir QR</button>
