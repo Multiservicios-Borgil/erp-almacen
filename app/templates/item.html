@@ -16,6 +16,29 @@
 <b>Estado:</b> {{ item.estado_actual }} <br>
 <b>Origen:</b> {{ item.origen }} <br>
 <b>Número de serie:</b> {{ item.numero_serie }} <br>
+<h2>Panel técnico</h2>
+
+<div style="background:#f8f9fa;padding:15px;border-radius:10px;margin-bottom:20px">
+
+<h3>Diagnóstico</h3>
+
+<form method="post" action="/actualizar_diagnostico/{{item.id}}">
+
+<textarea 
+name="diagnostico"
+style="width:100%;height:120px;padding:10px;border-radius:8px"
+placeholder="Observaciones técnicas..."
+>{{ item.diagnostico_inicial or "" }}</textarea>
+
+<br><br>
+
+<button type="submit">Guardar diagnóstico</button>
+
+</form>
+
+</div>
+
+
 {% if item.diagnostico_inicial %}
 
 <div style="background:#fff3cd;padding:12px;border-radius:8px;margin-top:10px;margin-bottom:10px">
