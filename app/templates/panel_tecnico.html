@@ -1,0 +1,31 @@
+from fastapi.responses import HTMLResponse
+from fastapi import Request, Depends
+from sqlalchemy.orm import Session
+
+@app.get("/panel_tecnico", response_class=HTMLResponse)
+def panel_tecnico(request: Request, db: Session = Depends(get_db)):
+
+    pendientes = db.query(Item).filter(
+        Item.parent_id == None,
+        Item.estado_actual.in_(["REGISTRADO"])
+    ).all()
+
+    en_reparacion = db.query(Item).filter(
+        Item.parent_id == None,
+        Item.estado_actual.in_(["ESTROPEADO", "REPARADO"])
+    ).all()
+
+    listos_venta = db.query(Item).filter(
+        Item.parent_id == None,
+        Item.estado_actual.in_(["VENTA_SEGUNDA_MANO", "VENTA_REACONDICIONADO", "VENTA_NUEVO"])
+    ).all()
+
+    return templates.TemplateResponse(
+        "panel_tecnico.html",
+        {
+            "request": request,
+            "pendientes": pendientes,
+            "en_reparacion": en_reparacion,
+            "listos_venta": listos_venta
+        }
+    )
