@@ -4,8 +4,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from fastapi import Header
 from .models import Evento, Venta
-from .models import Base, Item, Familia, Imagen
-
+from .models import Base, Item, Familia, HistorialDiagnostico
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy import func
 
@@ -16,7 +15,6 @@ import uuid
 import qrcode
 from fastapi.responses import StreamingResponse
 import requests
-
 
 
 from .database import SessionLocal, engine
@@ -36,19 +34,17 @@ FAMILIAS_PREDEFINIDAS = [
     "Aire acondicionado",
     "Termo eléctrico",
     "Placa vitrocerámica",
-    "Campana extractora"
+    "Campana extractora",
 ]
 PIEZAS_POR_FAMILIA = {
-
     "Lavadora": [
         {"nombre": "Puerta", "medida": True},
         {"nombre": "Placa electronica", "medida": False},
         {"nombre": "Motor", "medida": False},
         {"nombre": "Frontal", "medida": False},
         {"nombre": "Cajetin", "medida": False},
-        {"nombre": "Bomba desague", "medida": False}
+        {"nombre": "Bomba desague", "medida": False},
     ],
-
     "Lavavajillas": [
         {"nombre": "Resistencia", "medida": False},
         {"nombre": "Bomba", "medida": False},
@@ -58,9 +54,8 @@ PIEZAS_POR_FAMILIA = {
         {"nombre": "Frontal", "medida": False},
         {"nombre": "Placa Frontal", "medida": False},
         {"nombre": "Placa Motor", "medida": False},
-        {"nombre": "Tubo aquastop", "medida": False}
+        {"nombre": "Tubo aquastop", "medida": False},
     ],
-
     "Frigorífico": [
         {"nombre": "Placa", "medida": False},
         {"nombre": "Placa-Motor", "medida": False},
@@ -72,28 +67,26 @@ PIEZAS_POR_FAMILIA = {
         {"nombre": "Cajon Congelador Medio", "medida": True},
         {"nombre": "Cajon Congelador Inferior", "medida": True},
         {"nombre": "Cajon Izd frigo", "medida": True},
-        {"nombre": "Cajon derecho frigo", "medida": True}
+        {"nombre": "Cajon derecho frigo", "medida": True},
     ],
-
     "Vitroceramica": [
         {"nombre": "Resistencia", "medida": True},
-        {"nombre": "Placa", "medida": False}
+        {"nombre": "Placa", "medida": False},
     ],
-
     "Placa de Induccion": [
         {"nombre": "Inductores", "medida": True},
-        {"nombre": "Placa", "medida": False}
+        {"nombre": "Placa", "medida": False},
     ],
-
     "Horno": [
         {"nombre": "Resistencia Superior", "medida": False},
         {"nombre": "Resistencia Inferior", "medida": False},
         {"nombre": "Puerta", "medida": False},
         {"nombre": "Tirador", "medida": False},
         {"nombre": "Selector", "medida": False},
-        {"nombre": "Placa", "medida": False}
-    ]
+        {"nombre": "Placa", "medida": False},
+    ],
 }
+
 
 def crear_familias_predeterminadas():
     db = SessionLocal()
@@ -117,6 +110,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 # ---------------- DB ----------------
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -124,45 +118,33 @@ def get_db():
     finally:
         db.close()
 
+
 # ---------------- ROLES ----------------
+
 
 def verificar_roles_permitidos(*roles_permitidos):
     def wrapper(x_rol: str = Header()):
         if x_rol not in roles_permitidos:
             raise HTTPException(status_code=403, detail="Permiso denegado")
+
     return wrapper
+
 
 # ---------------- ESTADOS ----------------
 
 TRANSICIONES = {
-
     "PENDIENTE_DIAGNOSTICO": ["FUNCIONA", "ESTROPEADO"],
-
     "REGISTRADO": ["FUNCIONA", "ESTROPEADO"],
-
-    "FUNCIONA": [
-        "VENTA_SEGUNDA_MANO",
-        "VENTA_REACONDICIONADO",
-        "VENTA_NUEVO"
-    ],
-
-    "ESTROPEADO": [
-        "REPARADO",
-        "PARA_DESPIECE"
-    ],
-
-    "REPARADO": [
-        "VENTA_SEGUNDA_MANO",
-        "VENTA_REACONDICIONADO",
-        "VENTA_NUEVO"
-    ],
-
+    "FUNCIONA": ["VENTA_SEGUNDA_MANO", "VENTA_REACONDICIONADO", "VENTA_NUEVO"],
+    "ESTROPEADO": ["REPARADO", "PARA_DESPIECE"],
+    "REPARADO": ["VENTA_SEGUNDA_MANO", "VENTA_REACONDICIONADO", "VENTA_NUEVO"],
     "VENTA_SEGUNDA_MANO": ["VENDIDO"],
     "VENTA_REACONDICIONADO": ["VENDIDO"],
-    "VENTA_NUEVO": ["VENDIDO"]
+    "VENTA_NUEVO": ["VENDIDO"],
 }
 
 # ---------------- CREAR ITEM ----------------
+
 
 class ItemCreate(BaseModel):
     familia_id: int
@@ -174,17 +156,20 @@ class ItemCreate(BaseModel):
     motivo_retirada: str | None = None
     diagnostico_inicial: str | None = None
 
+
 @app.post("/crear_item")
 def crear_item(
     data: ItemCreate,
     db: Session = Depends(get_db),
-    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN"))
+    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN")),
 ):
 
     if data.origen == "RETIRADO_VIVIENDA" and not data.diagnostico_inicial:
         raise HTTPException(status_code=400, detail="Diagnóstico obligatorio")
 
-    estado_inicial = "PENDIENTE_DIAGNOSTICO" if data.origen == "RETIRADO_VIVIENDA" else "REGISTRADO"
+    estado_inicial = (
+        "PENDIENTE_DIAGNOSTICO" if data.origen == "RETIRADO_VIVIENDA" else "REGISTRADO"
+    )
 
     nuevo_id = f"{datetime.datetime.now().year}-{str(uuid.uuid4())[:6]}"
 
@@ -206,17 +191,20 @@ def crear_item(
 
     return {"id": nuevo_id}
 
+
 # ---------------- CAMBIAR ESTADO ----------------
+
 
 class EstadoUpdate(BaseModel):
     item_id: str
     nuevo_estado: str
 
+
 @app.post("/cambiar_estado")
 def cambiar_estado(
     data: EstadoUpdate,
     db: Session = Depends(get_db),
-    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN"))
+    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN")),
 ):
 
     item = db.query(Item).filter(Item.id == data.item_id).first()
@@ -237,7 +225,7 @@ def cambiar_estado(
         item_id=item.id,
         estado_anterior=estado_anterior,
         estado_nuevo=data.nuevo_estado,
-        usuario="sistema"
+        usuario="sistema",
     )
 
     db.add(evento)
@@ -245,7 +233,9 @@ def cambiar_estado(
 
     return {"mensaje": "Estado actualizado"}
 
+
 # ---------------- REGISTRAR VENTA ----------------
+
 
 class RegistrarVenta(BaseModel):
     item_id: str
@@ -255,11 +245,12 @@ class RegistrarVenta(BaseModel):
     garantia_meses: int | None = None
     numero_factura: str | None = None
 
+
 @app.post("/registrar_venta")
 def registrar_venta(
     data: RegistrarVenta,
     db: Session = Depends(get_db),
-    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN"))
+    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN")),
 ):
 
     item = db.query(Item).filter(Item.id == data.item_id).first()
@@ -273,7 +264,7 @@ def registrar_venta(
         cliente=data.cliente,
         precio=data.precio,
         garantia_meses=data.garantia_meses,
-        numero_factura=data.numero_factura
+        numero_factura=data.numero_factura,
     )
 
     item.en_stock = False
@@ -284,35 +275,43 @@ def registrar_venta(
 
     return {"mensaje": "Venta registrada"}
 
+
 # ---------------- STOCK ----------------
+
 
 @app.get("/stock")
 def ver_stock(
     db: Session = Depends(get_db),
-    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN"))
+    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN")),
 ):
     items = db.query(Item).filter(Item.en_stock == True).all()
     return [{"id": i.id, "estado": i.estado_actual} for i in items]
 
+
 # ---------------- ROOT ----------------
+
 
 @app.get("/")
 def root():
     return {"mensaje": "ERP Almacen funcionando correctamente"}
+
+
 @app.get("/panel", response_class=HTMLResponse)
 def panel(request: Request, db: Session = Depends(get_db)):
     familias = db.query(Familia).all()
     return templates.TemplateResponse(
-        "panel.html",
-        {"request": request, "familias": familias}
+        "panel.html", {"request": request, "familias": familias}
     )
+
+
 @app.get("/nuevo", response_class=HTMLResponse)
 def nuevo_form(request: Request, db: Session = Depends(get_db)):
     familias = db.query(Familia).all()
     return templates.TemplateResponse(
-        "nuevo.html",
-        {"request": request, "familias": familias}
+        "nuevo.html", {"request": request, "familias": familias}
     )
+
+
 from fastapi import Form
 from fastapi.responses import RedirectResponse
 
@@ -323,20 +322,24 @@ def stock_view(request: Request, db: Session = Depends(get_db)):
 
     items = []
     for i in items_db:
-        items.append({
-            "id": i.id,
-            "estado": i.estado_actual,
-            "serie": i.numero_serie,
-            "origen": i.origen,
-            "familia": i.familia.nombre if i.familia else "Sin familia"
-        })
+        items.append(
+            {
+                "id": i.id,
+                "estado": i.estado_actual,
+                "serie": i.numero_serie,
+                "origen": i.origen,
+                "familia": i.familia.nombre if i.familia else "Sin familia",
+            }
+        )
 
     return templates.TemplateResponse(
-        "stock.html",
-        {"request": request, "items": items}
+        "stock.html", {"request": request, "items": items}
     )
+
+
 import qrcode
 import os
+
 
 @app.post("/crear_item_web")
 def crear_item_web(
@@ -347,22 +350,22 @@ def crear_item_web(
     modelo: str = Form(None),
     origen: str = Form(...),
     diagnostico_inicial: str = Form(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
 
     # primero crear ID
     prefijos = {
-    1: "LAV",
-    2: "FRI",
-    3: "SEC",
-    4: "LAVV",
-    5: "HOR",
-    6: "MIC",
-    7: "AIRE",
-    8: "TER",
-    9: "VIT",
-    10: "CAM"
-}
+        1: "LAV",
+        2: "FRI",
+        3: "SEC",
+        4: "LAVV",
+        5: "HOR",
+        6: "MIC",
+        7: "AIRE",
+        8: "TER",
+        9: "VIT",
+        10: "CAM",
+    }
     prefijo = prefijos.get(familia_id, "ART")
 
     nuevo_id = f"{prefijo}-{str(uuid.uuid4())[:4]}"
@@ -376,7 +379,7 @@ def crear_item_web(
         modelo=modelo,
         estado_actual="REGISTRADO",
         origen=origen,
-        diagnostico_inicial=diagnostico_inicial
+        diagnostico_inicial=diagnostico_inicial,
     )
 
     db.add(item)
@@ -389,17 +392,22 @@ def crear_item_web(
     qr.save(f"app/static/{nuevo_id}.png")
 
     return RedirectResponse(f"/item/{nuevo_id}", status_code=303)
+
+
 from fastapi.staticfiles import StaticFiles
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
+
 @app.get("/item/{item_id}", response_class=HTMLResponse)
 def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
 
-    historial = db.query(HistorialDiagnostico)\
-    .filter(HistorialDiagnostico.item_id == item_id)\
-    .order_by(HistorialDiagnostico.fecha.desc())\
-    .all()
+    historial = (
+        db.query(HistorialDiagnostico)
+        .filter(HistorialDiagnostico.item_id == item_id)
+        .order_by(HistorialDiagnostico.fecha.desc())
+        .all()
+    )
     item = db.query(Item).filter(Item.id == item_id).first()
 
     hijos = db.query(Item).filter(Item.parent_id == item_id).all()
@@ -416,15 +424,14 @@ def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
             "item": item,
             "hijos": hijos,
             "historial": historial,
-            "piezas_disponibles": piezas_disponibles
-        }
+            "piezas_disponibles": piezas_disponibles,
+        },
     )
+
 
 @app.post("/cambiar_estado_web/{item_id}")
 def cambiar_estado_web(
-    item_id: str,
-    nuevo_estado: str = Form(...),
-    db: Session = Depends(get_db)
+    item_id: str, nuevo_estado: str = Form(...), db: Session = Depends(get_db)
 ):
     item = db.query(Item).filter(Item.id == item_id).first()
 
@@ -435,9 +442,13 @@ def cambiar_estado_web(
     db.commit()
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+
 @app.get("/scan", response_class=HTMLResponse)
 def scan_page(request: Request):
     return templates.TemplateResponse("scan.html", {"request": request})
+
+
 @app.get("/vender/{item_id}", response_class=HTMLResponse)
 def vender_form(item_id: str, request: Request, db: Session = Depends(get_db)):
     item = db.query(Item).filter(Item.id == item_id).first()
@@ -445,17 +456,16 @@ def vender_form(item_id: str, request: Request, db: Session = Depends(get_db)):
     if not item:
         return HTMLResponse("<h2>Item no encontrado</h2>")
 
-    return templates.TemplateResponse(
-        "vender.html",
-        {"request": request, "item": item}
-    )
+    return templates.TemplateResponse("vender.html", {"request": request, "item": item})
+
+
 @app.post("/vender/{item_id}")
 def procesar_venta(
     item_id: str,
     numero_factura: str = Form(None),
     tipo_venta: str = Form(...),
     precio: float = Form(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     item = db.query(Item).filter(Item.id == item_id).first()
 
@@ -472,22 +482,25 @@ def procesar_venta(
     db.commit()
 
     return RedirectResponse("/stock_view", status_code=303)
+
+
 @app.get("/crear_pieza/{item_id}", response_class=HTMLResponse)
 def crear_pieza_form(item_id: str, request: Request):
     return templates.TemplateResponse(
-        "crear_pieza.html",
-        {"request": request, "parent_id": item_id}
+        "crear_pieza.html", {"request": request, "parent_id": item_id}
     )
+
 
 import qrcode
 import os
+
 
 @app.post("/crear_pieza/{item_id}")
 def crear_pieza(
     item_id: str,
     nombre_pieza: str = Form(...),
     medidas: str = Form(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
 
     padre = db.query(Item).filter(Item.id == item_id).first()
@@ -502,7 +515,7 @@ def crear_pieza(
         estado_actual="REGISTRADO",
         origen="DESPIECE",
         parent_id=item_id,
-        en_stock=True
+        en_stock=True,
     )
 
     db.add(pieza)
@@ -519,6 +532,7 @@ def crear_pieza(
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)
 
+
 @app.get("/backup_json")
 def backup_json(db: Session = Depends(get_db)):
 
@@ -527,32 +541,34 @@ def backup_json(db: Session = Depends(get_db)):
     data = []
 
     for i in items:
-        data.append({
-            "id": i.id,
-            "familia": i.familia.nombre if i.familia else None,
-            "serie": i.numero_serie,
-            "estado": i.estado_actual,
-            "origen": i.origen,
-            "precio_compra": i.precio_compra,
-            "albaran": i.numero_albaran
-        })
+        data.append(
+            {
+                "id": i.id,
+                "familia": i.familia.nombre if i.familia else None,
+                "serie": i.numero_serie,
+                "estado": i.estado_actual,
+                "origen": i.origen,
+                "precio_compra": i.precio_compra,
+                "albaran": i.numero_albaran,
+            }
+        )
 
     return data
+
+
 @app.get("/buscar", response_class=HTMLResponse)
 def buscar(q: str, request: Request, db: Session = Depends(get_db)):
 
-    item = db.query(Item).filter(
-        (Item.id == q) |
-        (Item.numero_serie == q)
-    ).first()
+    item = db.query(Item).filter((Item.id == q) | (Item.numero_serie == q)).first()
 
     if item:
         return RedirectResponse(f"/item/{item.id}", status_code=303)
 
     return templates.TemplateResponse(
-        "panel.html",
-        {"request": request, "error": "Artículo no encontrado"}
+        "panel.html", {"request": request, "error": "Artículo no encontrado"}
     )
+
+
 @app.get("/export_csv")
 def export_csv(db: Session = Depends(get_db)):
 
@@ -561,61 +577,64 @@ def export_csv(db: Session = Depends(get_db)):
     output = io.StringIO()
     writer = csv.writer(output)
 
-    writer.writerow([
-        "ID",
-        "Tipo",
-        "Familia",
-        "Marca",
-        "Modelo",
-        "Numero serie",
-        "Nombre pieza",
-        "Medidas",
-        "Estado",
-        "Origen",
-        "Precio compra",
-        "Precio venta",
-        "Numero albaran",
-        "Diagnostico inicial",
-        "Decision tecnica",
-        "Aparato origen",
-        "En stock",
-        "Fecha creacion"
-    ])
+    writer.writerow(
+        [
+            "ID",
+            "Tipo",
+            "Familia",
+            "Marca",
+            "Modelo",
+            "Numero serie",
+            "Nombre pieza",
+            "Medidas",
+            "Estado",
+            "Origen",
+            "Precio compra",
+            "Precio venta",
+            "Numero albaran",
+            "Diagnostico inicial",
+            "Decision tecnica",
+            "Aparato origen",
+            "En stock",
+            "Fecha creacion",
+        ]
+    )
 
     for i in items:
 
         tipo = "PIEZA" if i.parent_id else "ELECTRODOMESTICO"
 
-        writer.writerow([
-            i.id,
-            tipo,
-            i.familia.nombre if i.familia else "",
-            i.marca,
-            i.modelo,
-            i.numero_serie,
-            i.nombre_pieza,
-            i.medidas,
-            i.estado_actual,
-            i.origen,
-            i.precio_compra,
-            i.precio_venta,
-            i.numero_albaran,
-            i.diagnostico_inicial,
-            i.decision_tecnica,
-            i.parent_id,
-            i.en_stock,
-            i.fecha_creacion
-        ])
+        writer.writerow(
+            [
+                i.id,
+                tipo,
+                i.familia.nombre if i.familia else "",
+                i.marca,
+                i.modelo,
+                i.numero_serie,
+                i.nombre_pieza,
+                i.medidas,
+                i.estado_actual,
+                i.origen,
+                i.precio_compra,
+                i.precio_venta,
+                i.numero_albaran,
+                i.diagnostico_inicial,
+                i.decision_tecnica,
+                i.parent_id,
+                i.en_stock,
+                i.fecha_creacion,
+            ]
+        )
 
     output.seek(0)
 
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={
-            "Content-Disposition": "attachment; filename=almacen_completo.csv"
-        }
+        headers={"Content-Disposition": "attachment; filename=almacen_completo.csv"},
     )
+
 
 @app.get("/buscar_piezas", response_class=HTMLResponse)
 def buscar_piezas(
@@ -623,7 +642,7 @@ def buscar_piezas(
     familia: str = "",
     nombre_pieza: str = "",
     modelo: str = "",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
 
     query = db.query(Item).filter(Item.parent_id != None)
@@ -640,28 +659,25 @@ def buscar_piezas(
     piezas = query.all()
 
     return templates.TemplateResponse(
-        "buscar_piezas.html",
-        {
-            "request": request,
-            "piezas": piezas
-        }
+        "buscar_piezas.html", {"request": request, "piezas": piezas}
     )
 
+
 @app.get("/crear_pieza_directa/{item_id}/{nombre}")
-def crear_pieza_directa(
-    item_id: str,
-    nombre: str,
-    db: Session = Depends(get_db)
-):
+def crear_pieza_directa(item_id: str, nombre: str, db: Session = Depends(get_db)):
 
     padre = db.query(Item).filter(Item.id == item_id).first()
     if padre.decision_tecnica == "REPARAR":
-        return HTMLResponse("<h2>Este aparato está marcado para reparación y no puede despiezarse</h2>")
+        return HTMLResponse(
+            "<h2>Este aparato está marcado para reparación y no puede despiezarse</h2>"
+        )
 
     if not padre:
         return HTMLResponse("<h2>Item no encontrado</h2>")
     if padre.decision_tecnica == "REPARAR":
-        return HTMLResponse("<h2>Este aparato está marcado para reparación y no puede despiezarse</h2>")
+        return HTMLResponse(
+            "<h2>Este aparato está marcado para reparación y no puede despiezarse</h2>"
+        )
 
     # 🚫 evitar despiezar piezas
     if padre.parent_id is not None:
@@ -676,28 +692,31 @@ def crear_pieza_directa(
         estado_actual="REGISTRADO",
         origen="DESPIECE",
         parent_id=item_id,
-        en_stock=True
+        en_stock=True,
     )
 
     db.add(pieza)
     db.commit()
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+
 @app.get("/diagnostico/{item_id}", response_class=HTMLResponse)
 def diagnostico_form(item_id: str, request: Request, db: Session = Depends(get_db)):
 
     item = db.query(Item).filter(Item.id == item_id).first()
 
     return templates.TemplateResponse(
-        "diagnostico.html",
-        {"request": request, "item": item}
+        "diagnostico.html", {"request": request, "item": item}
     )
+
+
 @app.post("/diagnostico/{item_id}")
 def guardar_diagnostico(
     item_id: str,
     coste: float = Form(None),
     decision: str = Form(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
 
     item = db.query(Item).filter(Item.id == item_id).first()
@@ -709,22 +728,24 @@ def guardar_diagnostico(
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)
 
+
 @app.get("/nueva_pieza", response_class=HTMLResponse)
 def nueva_pieza_form(request: Request, db: Session = Depends(get_db)):
 
     familias = db.query(Familia).all()
 
     return templates.TemplateResponse(
-        "nueva_pieza.html",
-        {"request": request, "familias": familias}
+        "nueva_pieza.html", {"request": request, "familias": familias}
     )
+
+
 @app.post("/crear_pieza_directa")
 def crear_pieza_directa(
     familia_id: int = Form(...),
     nombre_pieza: str = Form(...),
     medidas: str = Form(None),
     modelo: str = Form(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
 
     nuevo_id = f"PZ-{str(uuid.uuid4())[:6]}"
@@ -737,18 +758,18 @@ def crear_pieza_directa(
         familia_id=familia_id,
         estado_actual="REGISTRADO",
         origen="STOCK_ANTIGUO",
-        en_stock=True
+        en_stock=True,
     )
 
     db.add(pieza)
     db.commit()
 
     return RedirectResponse(f"/item/{nuevo_id}", status_code=303)
+
+
 @app.post("/precio/{item_id}")
 def actualizar_precio(
-    item_id: str,
-    precio: float = Form(...),
-    db: Session = Depends(get_db)
+    item_id: str, precio: float = Form(...), db: Session = Depends(get_db)
 ):
 
     item = db.query(Item).filter(Item.id == item_id).first()
@@ -758,24 +779,28 @@ def actualizar_precio(
     db.commit()
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+
 @app.get("/print_qr/{item_id}", response_class=HTMLResponse)
 def print_qr(item_id: str, request: Request, db: Session = Depends(get_db)):
 
     item = db.query(Item).filter(Item.id == item_id).first()
 
     return templates.TemplateResponse(
-        "print_qr.html",
-        {"request": request, "item": item}
+        "print_qr.html", {"request": request, "item": item}
     )
+
+
 @app.get("/print_pieza/{item_id}", response_class=HTMLResponse)
 def print_pieza(item_id: str, request: Request, db: Session = Depends(get_db)):
 
     pieza = db.query(Item).filter(Item.id == item_id).first()
 
     return templates.TemplateResponse(
-        "print_pieza.html",
-        {"request": request, "pieza": pieza}
+        "print_pieza.html", {"request": request, "pieza": pieza}
     )
+
+
 import qrcode
 import io
 from fastapi.responses import StreamingResponse
@@ -794,13 +819,14 @@ def generar_qr(item_id: str, request: Request):
 
     return StreamingResponse(buf, media_type="image/png")
 
+
 @app.get("/buscar_piezas_avanzado", response_class=HTMLResponse)
 def buscar_piezas_avanzado(
     request: Request,
     familia_id: int = None,
     modelo: str = "",
     nombre_pieza: str = "",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
 
     query = db.query(Item).filter(Item.parent_id != None)
@@ -820,19 +846,16 @@ def buscar_piezas_avanzado(
 
     return templates.TemplateResponse(
         "buscar_piezas.html",
-        {
-            "request": request,
-            "piezas": piezas,
-            "familias": familias
-        }
+        {"request": request, "piezas": piezas, "familias": familias},
     )
+
 
 @app.get("/buscar_aparatos", response_class=HTMLResponse)
 def buscar_aparatos(
     request: Request,
     familia_id: int = None,
     estado: str = "",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
 
     query = db.query(Item).filter(Item.parent_id == None)
@@ -849,12 +872,9 @@ def buscar_aparatos(
 
     return templates.TemplateResponse(
         "buscar_aparatos.html",
-        {
-            "request": request,
-            "aparatos": aparatos,
-            "familias": familias
-        }
+        {"request": request, "aparatos": aparatos, "familias": familias},
     )
+
 
 @app.get("/buscar_piezas", response_class=HTMLResponse)
 def buscar_piezas(
@@ -862,7 +882,7 @@ def buscar_piezas(
     marca: str = "",
     modelo: str = "",
     nombre_pieza: str = "",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
 
     query = db.query(Item).filter(Item.parent_id != None)
@@ -879,12 +899,9 @@ def buscar_piezas(
     piezas = query.all()
 
     return templates.TemplateResponse(
-        "buscar_piezas.html",
-        {
-            "request": request,
-            "piezas": piezas
-        }
+        "buscar_piezas.html", {"request": request, "piezas": piezas}
     )
+
 
 @app.get("/piezas_por_familia/{familia}")
 def piezas_por_familia(familia: str):
@@ -893,18 +910,16 @@ def piezas_por_familia(familia: str):
 
     return [p["nombre"] for p in piezas]
 
+
 @app.get("/etiqueta_pieza/{item_id}", response_class=HTMLResponse)
 def etiqueta_pieza(item_id: str, request: Request, db: Session = Depends(get_db)):
 
     pieza = db.query(Item).filter(Item.id == item_id).first()
 
     return templates.TemplateResponse(
-        "etiqueta_pieza.html",
-        {
-            "request": request,
-            "pieza": pieza
-        }
+        "etiqueta_pieza.html", {"request": request, "pieza": pieza}
     )
+
 
 @app.get("/etiqueta_aparato/{item_id}", response_class=HTMLResponse)
 def etiqueta_aparato(item_id: str, request: Request, db: Session = Depends(get_db)):
@@ -912,12 +927,9 @@ def etiqueta_aparato(item_id: str, request: Request, db: Session = Depends(get_d
     item = db.query(Item).filter(Item.id == item_id).first()
 
     return templates.TemplateResponse(
-        "etiqueta_aparato.html",
-        {
-            "request": request,
-            "item": item
-        }
+        "etiqueta_aparato.html", {"request": request, "item": item}
     )
+
 
 @app.get("/etiqueta_pieza/{item_id}", response_class=HTMLResponse)
 def etiqueta_pieza(item_id: str, request: Request, db: Session = Depends(get_db)):
@@ -925,22 +937,18 @@ def etiqueta_pieza(item_id: str, request: Request, db: Session = Depends(get_db)
     pieza = db.query(Item).filter(Item.id == item_id).first()
 
     return templates.TemplateResponse(
-        "etiqueta_pieza.html",
-        {
-            "request": request,
-            "pieza": pieza
-        }
+        "etiqueta_pieza.html", {"request": request, "pieza": pieza}
     )
+
 
 from fastapi import UploadFile, File
 
 import requests
 
+
 @app.post("/subir_imagen/{item_id}")
 async def subir_imagen(
-    item_id: str,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    item_id: str, file: UploadFile = File(...), db: Session = Depends(get_db)
 ):
 
     from PIL import Image
@@ -973,7 +981,7 @@ async def subir_imagen(
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "image/jpeg"
+        "Content-Type": "image/jpeg",
     }
 
     response = requests.put(url, headers=headers, data=contenido_comprimido)
@@ -983,16 +991,13 @@ async def subir_imagen(
 
     public_url = f"{SUPABASE_URL}/storage/v1/object/public/imagenes/{filename}"
 
-    imagen = Imagen(
-        item_id=item_id,
-        url=public_url,
-        orden=numero
-    )
+    imagen = Imagen(item_id=item_id, url=public_url, orden=numero)
 
     db.add(imagen)
     db.commit()
 
     return RedirectResponse(f"/imagenes/{item_id}", status_code=303)
+
 
 @app.get("/imagenes/{item_id}", response_class=HTMLResponse)
 def ver_imagenes(item_id: str, request: Request, db: Session = Depends(get_db)):
@@ -1000,13 +1005,9 @@ def ver_imagenes(item_id: str, request: Request, db: Session = Depends(get_db)):
     fotos = db.query(Imagen).filter(Imagen.item_id == item_id).all()
 
     return templates.TemplateResponse(
-        "imagenes.html",
-        {
-            "request": request,
-            "fotos": fotos,
-            "item_id": item_id
-        }
+        "imagenes.html", {"request": request, "fotos": fotos, "item_id": item_id}
     )
+
 
 @app.post("/borrar_imagen/{imagen_id}")
 def borrar_imagen(imagen_id: int, db: Session = Depends(get_db)):
@@ -1022,11 +1023,10 @@ def borrar_imagen(imagen_id: int, db: Session = Depends(get_db)):
 
     return {"ok": True}
 
+
 @app.post("/actualizar_diagnostico/{item_id}")
 def actualizar_diagnostico(
-    item_id: str,
-    diagnostico: str = Form(...),
-    db: Session = Depends(get_db)
+    item_id: str, diagnostico: str = Form(...), db: Session = Depends(get_db)
 ):
 
     item = db.query(Item).filter(Item.id == item_id).first()
@@ -1035,10 +1035,7 @@ def actualizar_diagnostico(
         return HTMLResponse("<h2>Item no encontrado</h2>")
 
     # guardar historial
-    historial = HistorialDiagnostico(
-        item_id=item_id,
-        diagnostico=diagnostico
-    )
+    historial = HistorialDiagnostico(item_id=item_id, diagnostico=diagnostico)
 
     db.add(historial)
 
@@ -1049,11 +1046,10 @@ def actualizar_diagnostico(
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)
 
+
 @app.post("/actualizar_diagnostico/{item_id}")
 def actualizar_diagnostico(
-    item_id: str,
-    diagnostico: str = Form(...),
-    db: Session = Depends(get_db)
+    item_id: str, diagnostico: str = Form(...), db: Session = Depends(get_db)
 ):
 
     item = db.query(Item).filter(Item.id == item_id).first()
@@ -1066,27 +1062,39 @@ def actualizar_diagnostico(
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)
 
+
 from fastapi.responses import HTMLResponse
 from fastapi import Request, Depends
 from sqlalchemy.orm import Session
 
+
 @app.get("/panel_tecnico", response_class=HTMLResponse)
 def panel_tecnico(request: Request, db: Session = Depends(get_db)):
 
-    pendientes = db.query(Item).filter(
-        Item.parent_id == None,
-        Item.estado_actual.in_(["REGISTRADO"])
-    ).all()
+    pendientes = (
+        db.query(Item)
+        .filter(Item.parent_id == None, Item.estado_actual.in_(["REGISTRADO"]))
+        .all()
+    )
 
-    en_reparacion = db.query(Item).filter(
-        Item.parent_id == None,
-        Item.estado_actual.in_(["ESTROPEADO", "REPARADO"])
-    ).all()
+    en_reparacion = (
+        db.query(Item)
+        .filter(
+            Item.parent_id == None, Item.estado_actual.in_(["ESTROPEADO", "REPARADO"])
+        )
+        .all()
+    )
 
-    listos_venta = db.query(Item).filter(
-        Item.parent_id == None,
-        Item.estado_actual.in_(["VENTA_SEGUNDA_MANO", "VENTA_REACONDICIONADO", "VENTA_NUEVO"])
-    ).all()
+    listos_venta = (
+        db.query(Item)
+        .filter(
+            Item.parent_id == None,
+            Item.estado_actual.in_(
+                ["VENTA_SEGUNDA_MANO", "VENTA_REACONDICIONADO", "VENTA_NUEVO"]
+            ),
+        )
+        .all()
+    )
 
     return templates.TemplateResponse(
         "panel_tecnico.html",
@@ -1094,6 +1102,6 @@ def panel_tecnico(request: Request, db: Session = Depends(get_db)):
             "request": request,
             "pendientes": pendientes,
             "en_reparacion": en_reparacion,
-            "listos_venta": listos_venta
-        }
+            "listos_venta": listos_venta,
+        },
     )

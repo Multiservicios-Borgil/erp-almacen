@@ -1,4 +1,14 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Float, DateTime, Date, Text
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Boolean,
+    ForeignKey,
+    Float,
+    DateTime,
+    Date,
+    Text,
+)
 from sqlalchemy.orm import relationship, declarative_base
 import datetime
 
@@ -15,6 +25,7 @@ class Usuario(Base):
     rol = Column(String, nullable=False)  # OPERARIO o ADMIN
     activo = Column(Boolean, default=True)
 
+
 class Familia(Base):
     __tablename__ = "familias"
 
@@ -22,6 +33,7 @@ class Familia(Base):
     nombre = Column(String, unique=True, nullable=False)
     descripcion = Column(String)
     activa = Column(Boolean, default=True)
+
 
 class Proveedor(Base):
     __tablename__ = "proveedores"
@@ -32,6 +44,7 @@ class Proveedor(Base):
     email = Column(String)
     activo = Column(Boolean, default=True)
 
+
 class Producto(Base):
     __tablename__ = "productos"
 
@@ -41,11 +54,13 @@ class Producto(Base):
     modelo = Column(String)
     activo = Column(Boolean, default=True)
 
+
 class TipoVenta(Base):
     __tablename__ = "tipos_venta"
 
     id = Column(Integer, primary_key=True)
     nombre = Column(String, unique=True)
+
 
 class Item(Base):
     __tablename__ = "items"
@@ -58,17 +73,9 @@ class Item(Base):
     diagnostico_inicial = Column(Text, nullable=True)
     coste_reparacion_estimado = Column(Float, nullable=True)
     decision_tecnica = Column(String, nullable=True)
-    parent = relationship(
-    "Item",
-    remote_side=[id],
-    back_populates="hijos"
-)
+    parent = relationship("Item", remote_side=[id], back_populates="hijos")
 
-    hijos = relationship(
-    "Item",
-    back_populates="parent",
-    cascade="all, delete"
-)
+    hijos = relationship("Item", back_populates="parent", cascade="all, delete")
     familia_id = Column(Integer, ForeignKey("familias.id"))
     sku_id = Column(Integer, ForeignKey("productos.id"))
     numero_serie = Column(String)
@@ -91,14 +98,17 @@ class Item(Base):
     fecha_creacion = Column(DateTime, default=datetime.datetime.utcnow)
 
     familia = relationship("Familia")
-    
+
     from sqlalchemy import Float, DateTime
+
+
 import datetime
 
 precio_venta = Column(Float, nullable=True)
 numero_factura = Column(String, nullable=True)
 tipo_venta = Column(String, nullable=True)
 fecha_venta = Column(DateTime, nullable=True)
+
 
 class Evento(Base):
     __tablename__ = "eventos"
@@ -110,6 +120,7 @@ class Evento(Base):
     usuario = Column(String)
     fecha = Column(DateTime, default=datetime.datetime.utcnow)
     comentario = Column(Text)
+
 
 class Venta(Base):
     __tablename__ = "ventas"
@@ -124,6 +135,7 @@ class Venta(Base):
     fecha = Column(DateTime, default=datetime.datetime.utcnow)
 
     tipo_venta = relationship("TipoVenta")
+
 
 from sqlalchemy import Column, Integer, String, DateTime
 import datetime
@@ -143,7 +155,9 @@ class Imagen(Base):
 
     fecha = Column(DateTime, default=datetime.datetime.utcnow)
 
-    class HistorialDiagnostico(Base):
+
+class HistorialDiagnostico(Base):
+
     __tablename__ = "historial_diagnostico"
 
     id = Column(Integer, primary_key=True, index=True)
