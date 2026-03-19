@@ -751,16 +751,21 @@ def crear_pieza_directa(
     db: Session = Depends(get_db),
 ):
 
+    # 🔥 1. Buscar familia
+    familia_obj = db.query(Familia).filter(Familia.nombre == familia).first()
+
+    if not familia_obj:
+        return HTMLResponse("<h2>Familia no encontrada</h2>")
+
+    # 🔥 2. Crear ID
     nuevo_id = f"PZ-{str(uuid.uuid4())[:6]}"
 
+    # 🔥 3. Crear pieza
     pieza = Item(
         id=nuevo_id,
         nombre_pieza=nombre_pieza,
         medidas=medidas,
         modelo=modelo,
-        familia_obj = db.query(Familia).filter(Familia.nombre == familia).first()
-        if not familia_obj:
-            return HTMLResponse("<h2>Familia no encontrada</h2>")
         familia_id=familia_obj.id,
         estado_actual="REGISTRADO",
         origen="STOCK_ANTIGUO",
