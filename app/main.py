@@ -972,7 +972,7 @@ async def subir_imagen(
 
     # convertir a RGB
     if image.mode != "RGB":
-    image = image.convert("RGB")
+        image = image.convert("RGB")
 
     # 🔥 CLAVE: REDUCIR TAMAÑO
     image.thumbnail((800, 800))
