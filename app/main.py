@@ -19,7 +19,7 @@ import requests
 
 from .database import SessionLocal, engine
 from .models import Base, Item, Familia, Imagen, HistorialDiagnostico
-from PIL import image
+from PIL import Image
 import io
 
 
@@ -967,23 +967,8 @@ async def subir_imagen(
 
     contenido = await file.read()
 
-    # comprimir y REDUCIR imagen
-    image = Image.open(io.BytesIO(contenido))
-
-    # convertir a RGB
-    if image.mode != "RGB":
-        image = image.convert("RGB")
-
-    # 🔥 CLAVE: REDUCIR TAMAÑO
-    image.thumbnail((800, 800))
-
-    buffer = io.BytesIO()
-
-    # 🔥 compresión fuerte
-    image.save(buffer, format="JPEG", quality=60, optimize=True)
-
-    contenido_comprimido = buffer.getvalue()
-    contenido_comprimido = buffer.getvalue()
+    # 🔥 usar función centralizada (MEJOR)
+    contenido_comprimido = optimizar_imagen(contenido)
 
     url = f"{SUPABASE_URL}/storage/v1/object/imagenes/{filename}"
 
