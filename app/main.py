@@ -758,8 +758,8 @@ def crear_pieza_directa(
         nombre_pieza=nombre_pieza,
         medidas=medidas,
         modelo=modelo,
-        familia_obj = db.query(Familia).filter(Familia.nombre == familia).first()
-if not familia_obj:
+        ffamilia_obj = db.query(Familia).filter(Familia.nombre == familia).first()
+    if not familia_obj:
     return HTMLResponse("<h2>Familia no encontrada</h2>")
         familia_id=familia_obj.id,
         estado_actual="REGISTRADO",
