@@ -748,6 +748,7 @@ def crear_pieza_directa(
     nombre_pieza: str = Form(...),
     medidas: str = Form(None),
     modelo: str = Form(None),
+    marca: str = Form(None),
     db: Session = Depends(get_db),
 ):
 
@@ -766,6 +767,7 @@ def crear_pieza_directa(
         nombre_pieza=nombre_pieza,
         medidas=medidas,
         modelo=modelo,
+        marca=marca,
         familia_id=familia_obj.id,
         estado_actual="REGISTRADO",
         origen="STOCK_ANTIGUO",
