@@ -744,7 +744,7 @@ def nueva_pieza_form(request: Request, db: Session = Depends(get_db)):
 
 @app.post("/crear_pieza_directa")
 def crear_pieza_directa(
-    familia_id: int = Form(...),
+    familia: str = Form(...),
     nombre_pieza: str = Form(...),
     medidas: str = Form(None),
     modelo: str = Form(None),
@@ -758,7 +758,10 @@ def crear_pieza_directa(
         nombre_pieza=nombre_pieza,
         medidas=medidas,
         modelo=modelo,
-        familia_id=familia_id,
+        familia_obj = db.query(Familia).filter(Familia.nombre == familia).first()
+if not familia_obj:
+    return HTMLResponse("<h2>Familia no encontrada</h2>")
+        familia_id=familia_obj.id,
         estado_actual="REGISTRADO",
         origen="STOCK_ANTIGUO",
         en_stock=True,
