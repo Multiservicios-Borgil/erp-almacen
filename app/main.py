@@ -19,6 +19,8 @@ import requests
 
 from .database import SessionLocal, engine
 from .models import Base, Item, Familia, Imagen, HistorialDiagnostico
+from PIL import image
+import io
 
 
 SUPABASE_URL = "https://vmwetkguivvuiehchuax.supabase.co"
@@ -952,9 +954,6 @@ async def subir_imagen(
     item_id: str, file: UploadFile = File(...), db: Session = Depends(get_db)
 ):
 
-    from PIL import Image
-    import io
-    import requests
 
     # comprobar cuántas fotos tiene ya
     fotos_existentes = db.query(Imagen).filter(Imagen.item_id == item_id).count()
@@ -968,13 +967,22 @@ async def subir_imagen(
 
     contenido = await file.read()
 
-    # comprimir imagen
+    # comprimir y REDUCIR imagen
     image = Image.open(io.BytesIO(contenido))
+
+    # convertir a RGB
+    if image.mode != "RGB":
     image = image.convert("RGB")
 
-    buffer = io.BytesIO()
-    image.save(buffer, format="JPEG", quality=70, optimize=True)
+    # 🔥 CLAVE: REDUCIR TAMAÑO
+    image.thumbnail((800, 800))
 
+    buffer = io.BytesIO()
+
+    # 🔥 compresión fuerte
+    image.save(buffer, format="JPEG", quality=60, optimize=True)
+
+    contenido_comprimido = buffer.getvalue()
     contenido_comprimido = buffer.getvalue()
 
     url = f"{SUPABASE_URL}/storage/v1/object/imagenes/{filename}"
@@ -1067,4 +1075,23 @@ from fastapi.responses import HTMLResponse
 from fastapi import Request, Depends
 from sqlalchemy.orm import Session
 
+def optimizar_imagen(imagen_bytes):
+    from PIL import Image
+    import io
+
+    img = Image.open(io.BytesIO(imagen_bytes))
+
+    # Convertir a RGB (muy importante)
+    if img.mode != "RGB":
+        img = img.convert("RGB")
+
+    # REDUCIR TAMAÑO (CLAVE)
+    img.thumbnail((800, 800))
+
+    output = io.BytesIO()
+
+    # COMPRESIÓN FUERTE (CLAVE)
+    img.save(output, format="JPEG", quality=60, optimize=True)
+
+    return output.getvalue()
 
