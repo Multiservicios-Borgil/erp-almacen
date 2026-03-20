@@ -8,6 +8,7 @@ from .models import Base, Item, Familia, HistorialDiagnostico
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy import func
 
+
 import csv
 import io
 import datetime
@@ -657,7 +658,7 @@ def buscar_piezas(
             query = query.filter(Item.familia_id == familia_obj.id)
 
     if marca:
-        query = query.filter(Item.marca.ilike(f"%{marca}%"))
+    query = query.filter(func.lower(Item.marca).contains(marca.lower()))
 
     if modelo:
         query = query.filter(Item.modelo.ilike(f"%{modelo}%"))
