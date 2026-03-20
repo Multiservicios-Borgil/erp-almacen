@@ -356,7 +356,7 @@ def crear_item_web(
     request: Request,
     familia_id: int = Form(...),
     numero_serie: str = Form(...),
-    marca: str = Form(None),
+    marca: str = Form(...),
     modelo: str = Form(None),
     origen: str = Form(...),
     diagnostico_inicial: str = Form(None),
@@ -748,7 +748,7 @@ def crear_pieza_directa(
     nombre_pieza: str = Form(...),
     medidas: str = Form(None),
     modelo: str = Form(None),
-    marca: str = Form(None),
+    marca: str = Form(...),
     db: Session = Depends(get_db),
 ):
 
