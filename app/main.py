@@ -656,14 +656,14 @@ def buscar_piezas(
         if familia_obj:
             query = query.filter(Item.familia_id == familia_obj.id)
 
-    if marca:
+    if marca and marca.strip():
         query = query.filter(func.lower(Item.marca).contains(marca.lower()))
 
-    if modelo:
-        query = query.filter(Item.modelo.ilike(f"%{modelo}%"))
+    if modelo and modelo.strip():
+        query = query.filter(func.lower(Item.modelo).contains(modelo.lower()))
 
-    if nombre_pieza:
-        query = query.filter(Item.nombre_pieza.ilike(f"%{nombre_pieza}%"))
+    if nombre_pieza and nombre_pieza.strip():
+        query = query.filter(func.lower(Item.nombre_pieza).contains(nombre_pieza.lower()))
 
     piezas = query.all()
 
