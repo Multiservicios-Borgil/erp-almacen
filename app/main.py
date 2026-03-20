@@ -649,7 +649,6 @@ def buscar_piezas(
     nombre_pieza: str = "",
     db: Session = Depends(get_db),
 ):
-
     query = db.query(Item).filter(Item.parent_id != None)
 
     if familia:
@@ -658,7 +657,7 @@ def buscar_piezas(
             query = query.filter(Item.familia_id == familia_obj.id)
 
     if marca:
-    query = query.filter(func.lower(Item.marca).contains(marca.lower()))
+        query = query.filter(func.lower(Item.marca).contains(marca.lower()))
 
     if modelo:
         query = query.filter(Item.modelo.ilike(f"%{modelo}%"))
