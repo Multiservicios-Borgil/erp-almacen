@@ -57,24 +57,29 @@ font-weight:bold;
 
 </div>
 
-<strong>ID:</strong> {{ pieza.id }} <br>
+<div style="font-size:12px; line-height:1.4">
+
+<div><strong>ID:</strong> {{ pieza.id }}</div>
 
 {% if pieza.nombre_pieza %}
-<strong>Pieza:</strong> {{ pieza.nombre_pieza }} <br>
+<div><strong>Pieza:</strong> {{ pieza.nombre_pieza }}</div>
 {% endif %}
 
 {% if pieza.marca %}
-<strong>Marca:</strong> {{ pieza.marca }} <br>
+<div><strong>Marca:</strong> {{ pieza.marca }}</div>
 {% endif %}
 
 {% if pieza.modelo %}
-<strong>Modelo:</strong> {{ pieza.modelo }} <br>
+<div><strong>Modelo:</strong> {{ pieza.modelo }}</div>
+{% endif %}
+
+{% if pieza.familia %}
+<div><strong>Tipo:</strong> {{ pieza.familia.nombre }}</div>
 {% endif %}
 
 {% if pieza.medidas %}
-<strong>Medidas:</strong> {{ pieza.medidas }} <br>
+<div><strong>Medidas:</strong> {{ pieza.medidas }}</div>
 {% endif %}
-</div>
 
 </div>
 
