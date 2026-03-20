@@ -643,26 +643,36 @@ def export_csv(db: Session = Depends(get_db)):
 def buscar_piezas(
     request: Request,
     familia: str = "",
-    nombre_pieza: str = "",
+    marca: str = "",
     modelo: str = "",
+    nombre_pieza: str = "",
     db: Session = Depends(get_db),
 ):
 
     query = db.query(Item).filter(Item.parent_id != None)
 
     if familia:
-        query = query.join(Familia).filter(Familia.nombre == familia)
+        familia_obj = db.query(Familia).filter(Familia.nombre == familia).first()
+        if familia_obj:
+            query = query.filter(Item.familia_id == familia_obj.id)
 
-    if nombre_pieza:
-        query = query.filter(Item.nombre_pieza == nombre_pieza)
+    if marca:
+        query = query.filter(Item.marca.ilike(f"%{marca}%"))
 
     if modelo:
         query = query.filter(Item.modelo.ilike(f"%{modelo}%"))
 
+    if nombre_pieza:
+        query = query.filter(Item.nombre_pieza.ilike(f"%{nombre_pieza}%"))
+
     piezas = query.all()
 
     return templates.TemplateResponse(
-        "buscar_piezas.html", {"request": request, "piezas": piezas}
+        "buscar_piezas.html",
+        {
+            "request": request,
+            "piezas": piezas
+        }
     )
 
 
