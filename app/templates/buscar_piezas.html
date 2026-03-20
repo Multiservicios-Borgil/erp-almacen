@@ -1,59 +1,36 @@
 {% extends "base.html" %}
-
 {% block title %}Buscar piezas{% endblock %}
-
 {% block content %}
 
 <h2>Buscar piezas</h2>
 
-<form method="get">
-
-<label>Electrodoméstico</label>
-
-<select name="familia" id="familia">
-
-<option value="">Seleccionar</option>
-
-<option value="Lavadora">Lavadora</option>
-<option value="Lavavajillas">Lavavajillas</option>
-<option value="Frigorífico">Frigorífico</option>
-<option value="Vitroceramica">Vitroceramica</option>
-<option value="Placa de Induccion">Placa de Induccion</option>
-<option value="Horno">Horno</option>
-
-</select>
-
 <form method="get" action="/buscar_piezas">
 
-<input type="text" name="marca" placeholder="Marca" style="width:100%;padding:10px;margin-bottom:10px;">
+    <label>Electrodoméstico</label>
+    <select name="familia" id="familia">
+        <option value="">Seleccionar</option>
+        <option value="Lavadora">Lavadora</option>
+        <option value="Lavavajillas">Lavavajillas</option>
+        <option value="Frigorífico">Frigorífico</option>
+        <option value="Vitroceramica">Vitroceramica</option>
+        <option value="Placa de Induccion">Placa de Induccion</option>
+        <option value="Horno">Horno</option>
+    </select>
 
-<input type="text" name="modelo" placeholder="Modelo" style="width:100%;padding:10px;margin-bottom:10px;">
+    <br><br>
 
-<input type="text" name="nombre_pieza" placeholder="Tipo de pieza" style="width:100%;padding:10px;margin-bottom:10px;">
+    <label>Tipo de pieza</label>
+    <select name="nombre_pieza" id="pieza">
+        <option value="">Seleccionar pieza</option>
+    </select>
 
-<button type="submit">Buscar</button>
+    <br><br>
 
-</form>
+    <input type="text" name="marca" placeholder="Marca" style="width:100%;padding:10px;margin-bottom:10px;">
+    
+    <input type="text" name="modelo" placeholder="Modelo" style="width:100%;padding:10px;margin-bottom:10px;">
 
-<br><br>
-
-<label>Tipo de pieza</label>
-
-<select name="nombre_pieza" id="pieza">
-
-<option value="">Seleccionar pieza</option>
-
-</select>
-
-<br><br>
-
-<label>Modelo</label>
-
-<input type="text" name="modelo" placeholder="Ej: WAE24262">
-
-<br><br>
-
-<button type="submit">Buscar</button>
+    <button type="submit">Buscar</button>
 
 </form>
 
@@ -62,52 +39,32 @@
 <h3>Resultados</h3>
 
 {% for p in piezas %}
-
 <div style="background:white;padding:10px;margin:10px 0;border-radius:8px;">
-
-<b>{{p.nombre_pieza}}</b><br>
-
-Marca: {{p.marca}} <br>
-Modelo: {{p.modelo}} <br>
-
-<a href="/item/{{p.id}}">Ver ficha</a>
-
+    <b>{{ p.nombre_pieza }}</b><br>
+    Marca: {{ p.marca }} <br>
+    Modelo: {{ p.modelo }} <br>
+    <a href="/item/{{ p.id }}">Ver ficha</a>
 </div>
-
 {% endfor %}
 
 <script>
-
 document.getElementById("familia").addEventListener("change", function(){
-
     const familia = this.value
 
     fetch("/piezas_por_familia/" + familia)
-
     .then(response => response.json())
-
     .then(data => {
-
         const select = document.getElementById("pieza")
-
         select.innerHTML = '<option value="">Seleccionar pieza</option>'
 
         data.forEach(pieza => {
-
             const option = document.createElement("option")
-
             option.value = pieza
-
             option.text = pieza
-
             select.appendChild(option)
-
         })
-
     })
-
 })
-
 </script>
 
 {% endblock %}
