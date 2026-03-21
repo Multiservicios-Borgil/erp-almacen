@@ -649,7 +649,7 @@ def buscar_piezas(
     nombre_pieza: str = "",
     db: Session = Depends(get_db),
 ):
-    query = db.query(Item).filter(Item.parent_id != None)
+    query = db.query(Item)
 
     if familia:
         familia_obj = db.query(Familia).filter(Familia.nombre == familia).first()
