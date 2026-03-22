@@ -1100,3 +1100,27 @@ def optimizar_imagen(imagen_bytes):
 
     return output.getvalue()
 
+@app.post("/eliminar_item/{item_id}")
+def eliminar_item(
+    item_id: str,
+    password: str = Form(...),
+    db: Session = Depends(get_db),
+):
+
+    PASSWORD_ADMIN = "3590"  # 🔥 cámbiala
+
+    if password != PASSWORD_ADMIN:
+        return HTMLResponse("<h2>Contraseña incorrecta</h2>")
+
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    if not item:
+        return HTMLResponse("<h2>Item no encontrado</h2>")
+
+    # eliminar también imágenes
+    db.query(Imagen).filter(Imagen.item_id == item_id).delete()
+
+    db.delete(item)
+    db.commit()
+
+    return RedirectResponse("/panel", status_code=303)

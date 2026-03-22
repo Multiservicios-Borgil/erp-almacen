@@ -186,6 +186,21 @@ Este aparato está marcado para reparación. El despiece está bloqueado.
 </button>
 </a>
 
+<div style="margin-top:30px; padding:15px; background:#f8d7da; border-radius:10px;">
+
+<h3 style="color:red;">Zona peligrosa</h3>
+
+<form method="post" action="/eliminar_item/{{item.id}}">
+
+<input type="password" name="password" placeholder="Contraseña" style="width:100%;padding:10px;margin-bottom:10px;">
+
+<button type="submit" style="width:100%;padding:15px;background:red;color:white;">
+Eliminar artículo
+</button>
+
+</form>
+
+</div>
 {% endfor %}
 
 </div>
