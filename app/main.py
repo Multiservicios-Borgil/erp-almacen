@@ -1107,7 +1107,7 @@ def eliminar_item(
     db: Session = Depends(get_db),
 ):
 
-    PASSWORD_ADMIN = "3590"  # 🔥 cámbiala
+    PASSWORD_ADMIN = "3539"
 
     if password != PASSWORD_ADMIN:
         return HTMLResponse("<h2>Contraseña incorrecta</h2>")
@@ -1117,7 +1117,6 @@ def eliminar_item(
     if not item:
         return HTMLResponse("<h2>Item no encontrado</h2>")
 
-    # eliminar también imágenes
     db.query(Imagen).filter(Imagen.item_id == item_id).delete()
 
     db.delete(item)
