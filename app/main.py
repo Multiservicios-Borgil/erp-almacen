@@ -1,4 +1,3 @@
-print("VERSION DE PRUEBA SUBIDA")
 from fastapi import FastAPI, Request, Depends, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
@@ -341,6 +340,8 @@ def stock_view(request: Request, db: Session = Depends(get_db)):
                 "serie": i.numero_serie,
                 "origen": i.origen,
                 "familia": i.familia.nombre if i.familia else "Sin familia",
+                "marca": i.marca,
+                "nombre_pieza": i.nombre_pieza,
             }
         )
 
@@ -1025,7 +1026,7 @@ def borrar_imagen(imagen_id: int, db: Session = Depends(get_db)):
 
     filename = imagen.url.split("/")[-1]
 
-    
+
     db.delete(imagen)
     db.commit()
 

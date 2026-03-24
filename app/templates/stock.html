@@ -1,18 +1,22 @@
-{% extends "base.html" %}
-
-{% block title %}Stock{% endblock %}
-
-{% block content %}
-<h2>Stock Actual</h2>
-
+{% extends “base.html” %} {% block title %}Stock{% endblock %} {% block content %}
+Stock Actual
 {% for item in items %}
-<div style="background:white;padding:15px;margin:10px 0;border-radius:10px;">
-    <strong>ID:</strong> {{item.id}} <br>
-    <strong>Familia:</strong> {{item.familia}} <br>
-    <strong>Serie:</strong> {{item.serie}} <br>
-    <strong>Estado:</strong> {{item.estado}}
-    <a href="/item/{{item.id}}" class="btn">Ver ficha</a>
-</div>
-{% endfor %}
 
+
+<strong>ID:</strong> {{item.id}} <br>
+<strong>Familia:</strong> {{item.familia}} <br>
+
+<strong>Marca:</strong> {{item.marca or "Sin marca"}} <br>
+
+{% if item.nombre_pieza %}
+   <strong>Pieza:</strong> {{item.nombre_pieza}} <br>
+{% else %}
+   <strong>Tipo:</strong> Electrodoméstico <br>
+{% endif %}
+
+<strong>Serie:</strong> {{item.serie}} <br>
+<strong>Estado:</strong> {{item.estado}} <br><br>
+
+<a href="/item/{{item.id}}" class="btn">Ver ficha</a>
+{% endfor %}
 {% endblock %}
