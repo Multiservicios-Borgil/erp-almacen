@@ -98,6 +98,7 @@ class Item(Base):
     fecha_creacion = Column(DateTime, default=datetime.datetime.utcnow)
 
     familia = relationship("Familia")
+    en_wallapop = Column(Boolean,default=False)
 
     from sqlalchemy import Float, DateTime
 
