@@ -8,7 +8,27 @@
 <h2>{{ item.id }}</h2>
 {% if item.nombre_pieza %}
 <h3>{{ item.nombre_pieza }}</h3>
-en_wallapop = Column(Boolean, default=False)
+<h3>Wallapop</h3>
+
+<form method="post" action="/toggle_wallapop/{{item.id}}">
+    <button type="submit" style="
+        width:100%;
+        padding:15px;
+        border-radius:10px;
+        {% if item.en_wallapop %}
+            background:green;
+            color:white;
+        {% else %}
+            background:orange;
+        {% endif %}
+    ">
+        {% if item.en_wallapop %}
+            ✔ Publicado en Wallapop
+        {% else %}
+            📱 Marcar como publicado
+        {% endif %}
+    </button>
+</form>
 {% endif %}
 
 <div style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">

@@ -887,10 +887,16 @@ def buscar_aparatos(
     request: Request,
     familia_id: int = None,
     estado: str = "",
+    en_wallapop: str ="",
     db: Session = Depends(get_db),
 ):
 
     query = db.query(Item).filter(Item.parent_id == None)
+    if en_wallapop == "si":
+        query = query.filter(Item.en_wallapop == True)
+
+    if en_wallapop == "no":
+        query = query.filter(Item.en_wallapop == False)
 
     if familia_id:
         query = query.filter(Item.familia_id == familia_id)
