@@ -8,6 +8,7 @@
 <h2>{{ item.id }}</h2>
 {% if item.nombre_pieza %}
 <h3>{{ item.nombre_pieza }}</h3>
+en_wallapop = Column(Boolean, default=False)
 {% endif %}
 
 <div style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">
@@ -52,6 +53,21 @@ name="diagnostico"
 style="width:100%;height:120px;padding:10px;border-radius:8px"
 placeholder="Observaciones, diagnóstico, piezas dañadas..."
 >{{ item.diagnostico_inicial or "" }}</textarea>
+
+<h3>Wallapop</h3>
+
+
+<form method="post" action="/toggle_wallapop/{{item.id}}">
+    {% if item.en_wallapop %}
+        <button style="background:green;color:white;width:100%;padding:15px">
+            ✔ Publicado en Wallapop
+        </button>
+    {% else %}
+        <button style="background:orange;width:100%;padding:15px">
+            Marcar como publicado en Wallapop
+        </button>
+    {% endif %}
+</form>
 
 <h3>Historial de diagnóstico</h3>
 

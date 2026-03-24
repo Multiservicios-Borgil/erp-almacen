@@ -645,13 +645,19 @@ def export_csv(db: Session = Depends(get_db)):
 @app.get("/buscar_piezas", response_class=HTMLResponse)
 def buscar_piezas(
     request: Request,
-    familia: str = "",
     marca: str = "",
     modelo: str = "",
     nombre_pieza: str = "",
+    en_wallapop: str = "",
     db: Session = Depends(get_db),
 ):
     query = db.query(Item)
+
+    if en_wallapop == "si":
+        query = query.filter(Item.en_wallapop == True)
+
+    if en_wallapop == "no":
+        query = query.filter(Item.en_wallapop == False)
 
     if familia:
         familia_obj = db.query(Familia).filter(Familia.nombre == familia).first()
@@ -1120,3 +1126,18 @@ def eliminar_item(
     db.commit()
 
     return RedirectResponse("/panel", status_code=303)
+
+@app.post("/toggle_wallapop/{item_id}")
+def toggle_wallapop(item_id: str, db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+
+    if not item:
+        return HTMLResponse("<h2>Item no encontrado</h2>")
+
+
+    item.en_wallapop = not item.en_wallapop
+    db.commit()
+
+
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
