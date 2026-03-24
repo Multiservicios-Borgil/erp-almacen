@@ -970,49 +970,43 @@ from fastapi import UploadFile, File
 import requests
 
 
+from typing import List
+
+
 @app.post("/subir_imagen/{item_id}")
 async def subir_imagen(
-    item_id: str, file: UploadFile = File(...), db: Session = Depends(get_db)
+    item_id: str,
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(get_db)
 ):
-
-
-    # comprobar cuántas fotos tiene ya
     fotos_existentes = db.query(Imagen).filter(Imagen.item_id == item_id).count()
-
     if fotos_existentes >= 5:
         return {"error": "Máximo 5 fotos por artículo"}
+    for file in files:
+        if fotos_existentes >= 5:
+            break
+        numero = fotos_existentes + 1
+        filename = f"{item_id}_{numero}.jpg"
+        contenido = await file.read()
+        contenido_comprimido = optimizar_imagen(contenido)
+        url = f"{SUPABASE_URL}/storage/v1/object/imagenes/{filename}"
+        headers = {
+            "apikey": SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type": "image/jpeg",
+        }
+        response = requests.put(url, headers=headers, data=contenido_comprimido)
+        if response.status_code in [200, 201]:
+            public_url = f"{SUPABASE_URL}/storage/v1/object/public/imagenes/{filename}"
+            imagen = Imagen(item_id=item_id, url=public_url, orden=numero)
 
-    numero = fotos_existentes + 1
+            db.add(imagen)
+            db.commit()
 
-    filename = f"{item_id}_{numero}.jpg"
+            fotos_existentes += 1
 
-    contenido = await file.read()
 
-    # 🔥 usar función centralizada (MEJOR)
-    contenido_comprimido = optimizar_imagen(contenido)
-
-    url = f"{SUPABASE_URL}/storage/v1/object/imagenes/{filename}"
-
-    headers = {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "image/jpeg",
-    }
-
-    response = requests.put(url, headers=headers, data=contenido_comprimido)
-
-    if response.status_code not in [200, 201]:
-        return {"error": response.text}
-
-    public_url = f"{SUPABASE_URL}/storage/v1/object/public/imagenes/{filename}"
-
-    imagen = Imagen(item_id=item_id, url=public_url, orden=numero)
-
-    db.add(imagen)
-    db.commit()
-
-    return RedirectResponse(f"/imagenes/{item_id}", status_code=303)
-
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
 
 @app.get("/imagenes/{item_id}", response_class=HTMLResponse)
 def ver_imagenes(item_id: str, request: Request, db: Session = Depends(get_db)):
