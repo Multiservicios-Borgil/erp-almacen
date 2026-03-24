@@ -645,6 +645,7 @@ def export_csv(db: Session = Depends(get_db)):
 @app.get("/buscar_piezas", response_class=HTMLResponse)
 def buscar_piezas(
     request: Request,
+    familia: str = "",
     marca: str = "",
     modelo: str = "",
     nombre_pieza: str = "",
