@@ -1148,3 +1148,76 @@ def toggle_wallapop(item_id: str, db: Session = Depends(get_db)):
 
 
     return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+# ---------------- LOGIN CONFIG ----------------
+from fastapi import Request, Form, HTTPException
+from fastapi.responses import RedirectResponse, HTMLResponse
+
+
+USUARIO = "admin"
+PASSWORD = "1234"  # 🔥 cámbiala
+
+
+# ---------------- LOGIN ----------------
+@app.get("/login", response_class=HTMLResponse)
+def login_form(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+
+
+
+@app.post("/login")
+def login(username: str = Form(...), password: str = Form(...)):
+    if username == USUARIO and password == PASSWORD:
+        response = RedirectResponse("/panel", status_code=303)
+
+
+        response.set_cookie(
+            key="auth",
+            value="ok",
+            max_age=60 * 60 * 24 * 30,  # 30 días
+            httponly=True
+        )
+
+
+        return response
+
+
+    return HTMLResponse("<h2>Login incorrecto</h2>")
+
+
+
+
+# ---------------- LOGOUT ----------------
+@app.get("/logout")
+def logout():
+    response = RedirectResponse("/login")
+    response.delete_cookie("auth")
+    return response
+
+
+
+
+# ---------------- MIDDLEWARE SEGURIDAD ----------------
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+
+
+    rutas_publicas = [
+        "/login",
+        "/static",
+        "/qr",  # para QR
+    ]
+
+
+    # permitir rutas públicas
+    if any(request.url.path.startswith(r) for r in rutas_publicas):
+        return await call_next(request)
+
+
+    # comprobar cookie
+    if request.cookies.get("auth") != "ok":
+        return RedirectResponse("/login")
+
+
+    return await call_next(request)
