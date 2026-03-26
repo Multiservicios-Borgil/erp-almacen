@@ -1,74 +1,36 @@
-%PDF-1.4
-%���� ReportLab Generated PDF document (opensource)
-1 0 obj
-<<
-/F1 2 0 R /F2 3 0 R
->>
-endobj
-2 0 obj
-<<
-/BaseFont /Helvetica /Encoding /WinAnsiEncoding /Name /F1 /Subtype /Type1 /Type /Font
->>
-endobj
-3 0 obj
-<<
-/BaseFont /ZapfDingbats /Name /F2 /Subtype /Type1 /Type /Font
->>
-endobj
-4 0 obj
-<<
-/Contents 8 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 7 0 R /Resources <<
-/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
->> /Rotate 0 /Trans <<
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
 
->> 
-  /Type /Page
->>
-endobj
-5 0 obj
-<<
-/PageMode /UseNone /Pages 7 0 R /Type /Catalog
->>
-endobj
-6 0 obj
-<<
-/Author (\(anonymous\)) /CreationDate (D:20260326212006+00'00') /Creator (\(unspecified\)) /Keywords () /ModDate (D:20260326212006+00'00') /Producer (ReportLab PDF Library - \(opensource\)) 
-  /Subject (\(unspecified\)) /Title (\(anonymous\)) /Trapped /False
->>
-endobj
-7 0 obj
-<<
-/Count 1 /Kids [ 4 0 R ] /Type /Pages
->>
-endobj
-8 0 obj
-<<
-/Filter [ /ASCII85Decode /FlateDecode ] /Length 704
->>
-stream
-Gau0@6#W5H(qoMk5#Fa`Wt@$W>=OcJgXMg@kTk>p`RkZF"e44X8NZ=ScOcP0P\/ZY+<eqcoAfX0Imt"%(U[UJ!dmbY^I<Z>8618<j!c6tE0E8B%dK-W&PONb*(:qo]>>HA/%1V@`5XKWNtlhi(8s"/EhONP1piM/Q98j&_hS$[k6T_[0L7S+.Fr=*S$I!Ao]lpKmuX'KLpW9)!=UmjZ^!V?ERCj$FBdCMq[82oQJ!8/kEPuHD4V*CE(dk6esr0kSd%KgR?^lWo(^(^!S9fd;G8,e-#5g,Fj:Gc<L?Z:Z8fM$n5Lm[Pc$4s[>n,::2N+a@k-)M]D%%OALUrW"s;QCN0\*4pUV^Ylncu*(KJIYio,K%+sqI89QdqZ<#R")3,GC6'`Mt%G>r\5#=cTY6C='[57\"uh*_Mp1V':h\!#ITJ;N5_/6or'r#QF)0'&b,%ICr`=-%X,]"PVk!.dcNW&7MukT*K"@)?qe=J$Dt2dKq4V)sK4m'5]1dD9;Tlo&Vn"J]7aD/+KK]-(Hn)sq6HA/!M!i"Sol+[]-+SMM#3H>P*l](6/'c^c`_]IV`(bK2'Is4sHZkPsF&8o)TrNgZ^/[,gZrTHf%mFo1#Y$%f4"[@.\18C_j'-WN^R%NDtCYEa7Ze,5WQk]5QuLD"JCbLN*1gu!!dT[it;fD>)[hd/n+LR6Z/rFU!-Y7<P,!QH=L$i~>endstream
-endobj
-xref
-0 9
-0000000000 65535 f 
-0000000061 00000 n 
-0000000102 00000 n 
-0000000209 00000 n 
-0000000292 00000 n 
-0000000495 00000 n 
-0000000563 00000 n 
-0000000843 00000 n 
-0000000902 00000 n 
-trailer
-<<
-/ID 
-[<5fc32f4932889b0487a384daf523cc55><5fc32f4932889b0487a384daf523cc55>]
-% ReportLab generated PDF document -- digest (opensource)
+{% block content %}
 
-/Info 6 0 R
-/Root 5 0 R
-/Size 9
->>
-startxref
-1696
-%%EOF
+<div style="max-width:400px;margin:50px auto;background:white;padding:25px;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,0.1);">
+
+    <h2 style="text-align:center;margin-bottom:20px;">Acceso</h2>
+
+    <form method="post" action="/login">
+
+        <input 
+            type="text" 
+            name="username" 
+            placeholder="Usuario"
+            required
+            style="width:100%;padding:12px;margin-bottom:12px;border-radius:8px;border:1px solid #ccc;">
+
+        <input 
+            type="password" 
+            name="password" 
+            placeholder="Contraseña"
+            required
+            style="width:100%;padding:12px;margin-bottom:15px;border-radius:8px;border:1px solid #ccc;">
+
+        <button 
+            type="submit" 
+            style="width:100%;padding:15px;background:#007bff;color:white;border:none;border-radius:10px;font-size:16px;">
+            Entrar
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}
