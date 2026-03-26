@@ -71,14 +71,14 @@
 <h3>Código QR</h3>
 <img src="/qr/{{item.id}}" width="220">
 
-<h3>Fotos</h3>
+<h3 style="margin-top:20px">Fotos</h3>
 <form action="/subir_imagen/{{item.id}}" method="post" enctype="multipart/form-data">
 <input type="file" name="files" multiple accept="image/*">
 <button type="submit">Subir fotos</button>
 </form>
 
 <a href="/imagenes/{{item.id}}">
-<button>Ver fotos</button>
+<button style="margin-top:10px">Ver fotos</button>
 </a>
 
 <h3>Precio de venta</h3>
@@ -88,57 +88,96 @@
 </form>
 
 <a href="/crear_pieza/{{item.id}}">
-<button style="width:100%;padding:18px;margin-top:10px">Crear pieza</button>
+<button style="width:100%;padding:18px;margin-top:10px">
+Crear pieza
+</button>
 </a>
 
 <a href="/vender/{{item.id}}">
-<button style="width:100%;padding:18px;margin-top:10px">Vender</button>
+<button style="width:100%;padding:18px;margin-top:10px">
+Vender
+</button>
 </a>
 
 {% if item.parent_id %}
-<h3>Información de la pieza</h3>
+<h3 style="margin-top:30px">Información de la pieza</h3>
 <div style="background:white;padding:10px;border-radius:8px;">
 <strong>Nombre pieza:</strong> {{ item.nombre_pieza }} <br>
+
 {% if item.medidas %}
 <strong>Medidas:</strong> {{ item.medidas }} <br>
 {% endif %}
+
 <strong>Aparato origen:</strong>
-<a href="/item/{{item.parent_id}}">{{item.parent_id}}</a>
+<a href="/item/{{item.parent_id}}">
+{{item.parent_id}}
+</a>
 </div>
 {% endif %}
 
 {% if not item.parent_id %}
-<h3>Piezas del aparato</h3>
+<h3 style="margin-top:30px">Piezas del aparato</h3>
 {% for hijo in hijos %}
 <div style="background:white;padding:10px;margin:8px 0;border-radius:8px;">
 <strong>ID:</strong> {{hijo.id}} <br>
+
 {% if hijo.nombre_pieza %}
 <strong>Pieza:</strong> {{ hijo.nombre_pieza }} <br>
 {% endif %}
+
 {% if hijo.medidas %}
 <strong>Medidas:</strong> {{ hijo.medidas }} <br>
 {% endif %}
+
 <a href="/item/{{hijo.id}}">Ver pieza</a>
 </div>
 {% endfor %}
 {% endif %}
 
-<h3>Cambiar Estado</h3>
+<h3 style="margin-top:30px">Cambiar Estado</h3>
+
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
 <button type="submit" name="nuevo_estado" value="FUNCIONA">FUNCIONA</button>
 </form>
+
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
 <button type="submit" name="nuevo_estado" value="ESTROPEADO">ESTROPEADO</button>
 </form>
 
+<form method="post" action="/cambiar_estado_web/{{item.id}}">
+<button type="submit" name="nuevo_estado" value="REPARADO">REPARADO</button>
+</form>
+
+<form method="post" action="/cambiar_estado_web/{{item.id}}">
+<button type="submit" name="nuevo_estado" value="VENTA_SEGUNDA_MANO">VENTA SEGUNDA MANO</button>
+</form>
+
+<form method="post" action="/cambiar_estado_web/{{item.id}}">
+<button type="submit" name="nuevo_estado" value="VENTA_REACONDICIONADO">VENTA REACONDICIONADO</button>
+</form>
+
+<form method="post" action="/cambiar_estado_web/{{item.id}}">
+<button type="submit" name="nuevo_estado" value="VENTA_NUEVO">VENTA NUEVO</button>
+</form>
+
+<form method="post" action="/cambiar_estado_web/{{item.id}}">
+<button type="submit" name="nuevo_estado" value="PREPARAR_GOLPEADO_VENTA_NUEVO">GOLPEADO VENTA NUEVO</button>
+</form>
+
+<form method="post" action="/cambiar_estado_web/{{item.id}}">
+<button type="submit" name="nuevo_estado" value="PREPARAR_GOLPEADO_REACONDICIONADO">GOLPEADO REACONDICIONADO</button>
+</form>
+
 <div style="margin-top:30px; padding:15px; background:#f8d7da; border-radius:10px;">
 <h3 style="color:red;">Zona peligrosa</h3>
+
 <form method="post" action="/eliminar_item/{{item.id}}">
 <input type="password" name="password" placeholder="Contraseña" style="width:100%;padding:10px;margin-bottom:10px;">
 <button type="submit" style="width:100%;padding:15px;background:red;color:white;">
 Eliminar artículo
 </button>
 </form>
+
 </div>
 
 {% endblock %}
