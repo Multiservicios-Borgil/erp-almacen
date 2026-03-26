@@ -1,362 +1,144 @@
 {% extends "base.html" %}
-
 {% block title %}Ficha{% endblock %}
-
 
 {% block content %}
 
 <h2>{{ item.id }}</h2>
+
 {% if item.nombre_pieza %}
 <h3>{{ item.nombre_pieza }}</h3>
-<h3>Wallapop</h3>
-
-<form method="post" action="/toggle_wallapop/{{item.id}}">
-    <button type="submit" style="
-        width:100%;
-        padding:15px;
-        border-radius:10px;
-        {% if item.en_wallapop %}
-            background:green;
-            color:white;
-        {% else %}
-            background:orange;
-        {% endif %}
-    ">
-        {% if item.en_wallapop %}
-            ✔ Publicado en Wallapop
-        {% else %}
-            📱 Marcar como publicado
-        {% endif %}
-    </button>
-</form>
 {% endif %}
 
-<div style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">
+{% if item.medidas %}
+<div style="background:#e9f7ef;padding:12px;border-radius:10px;margin:10px 0;">
+    📏 <strong>Medidas:</strong> {{ item.medidas }}
+</div>
+{% endif %}
 
+<h3>Wallapop</h3>
+<form method="post" action="/toggle_wallapop/{{item.id}}">
+    <button type="submit" style="
+        width:100%;
+        padding:15px;
+        border-radius:10px;
+        {% if item.en_wallapop %}
+            background:green;
+            color:white;
+        {% else %}
+            background:orange;
+        {% endif %}
+    ">
+        {% if item.en_wallapop %}
+            ✔ Publicado en Wallapop
+        {% else %}
+            📱 Marcar como publicado
+        {% endif %}
+    </button>
+</form>
+
+<div style="background:white;padding:15px;border-radius:10px;margin-bottom:20px;">
 <b>Familia:</b> {{ item.familia.nombre if item.familia else "Sin familia" }} <br>
 <b>Estado:</b> {{ item.estado_actual }} <br>
 <b>Origen:</b> {{ item.origen }} <br>
 <b>Número de serie:</b> {{ item.numero_serie }} <br>
-<h2>Panel técnico</h2>
 
-<div style="background:#f8f9fa;padding:15px;border-radius:10px;margin-bottom:20px">
-
-<h3>Diagnóstico</h3>
-
-<form method="post" action="/actualizar_diagnostico/{{item.id}}">
-
-<textarea 
-name="diagnostico"
-style="width:100%;height:120px;padding:10px;border-radius:8px"
-placeholder="Observaciones técnicas..."
->{{ item.diagnostico_inicial or "" }}</textarea>
-
-<br><br>
-
-<button type="submit">Guardar diagnóstico</button>
-
-</form>
-
-</div>
-
-
-{% if item.diagnostico_inicial %}
-
-<div style="background:#fff3cd;padding:12px;border-radius:8px;margin-top:10px;margin-bottom:10px">
-
-<h3>Comentario técnico</h3>
-
-<form method="post" action="/actualizar_diagnostico/{{item.id}}">
-
-<textarea 
-name="diagnostico"
-style="width:100%;height:120px;padding:10px;border-radius:8px"
-placeholder="Observaciones, diagnóstico, piezas dañadas..."
->{{ item.diagnostico_inicial or "" }}</textarea>
-
-<h3>Wallapop</h3>
-
-
-<form method="post" action="/toggle_wallapop/{{item.id}}">
-    {% if item.en_wallapop %}
-        <button style="background:green;color:white;width:100%;padding:15px">
-            ✔ Publicado en Wallapop
-        </button>
-    {% else %}
-        <button style="background:orange;width:100%;padding:15px">
-            Marcar como publicado en Wallapop
-        </button>
-    {% endif %}
-</form>
-
-<h3>Historial de diagnóstico</h3>
-
-{% for h in historial %}
-
-<div style="background:#f5f5f5;padding:10px;margin-bottom:8px;border-radius:8px">
-
-<b>{{ h.fecha.strftime("%d/%m/%Y %H:%M") }}</b><br>
-
-{{ h.diagnostico }}
-
-</div>
-
-{% endfor %}
-
-<br><br>
-
-<button type="submit">
-Guardar comentario
-</button>
-
-</form>
-
-{% endif %}
 {% if item.modelo %}
 <b>Modelo:</b> {{ item.modelo }} <br>
 {% endif %}
-{% if item.precio_compra %}
-<b>Precio compra:</b> {{ item.precio_compra }} € <br>
-{% endif %}
-{% if item.precio_venta %}
-<p><b>Precio de venta:</b> {{ item.precio_venta }} €</p>
-{% endif %}
-{% if item.numero_albaran %}
-<b>Nº Albarán:</b> {{ item.numero_albaran }} <br>
-{% endif %}
 
+{% if item.marca %}
+<b>Marca:</b> {{ item.marca }} <br>
+{% endif %}
 </div>
 
-
-{% if item.diagnostico_inicial %}
-<div style="background:#fff3cd;padding:12px;border-radius:8px;margin-bottom:15px;">
-<b>Diagnóstico inicial:</b><br>
-{{ item.diagnostico_inicial }}
-</div>
-{% endif %}
-
-
-{% if item.coste_reparacion_estimado %}
-<p><b>Coste estimado reparación:</b> {{ item.coste_reparacion_estimado }} €</p>
-{% endif %}
-
-{% if item.decision_tecnica %}
-<p><b>Decisión técnica:</b> {{ item.decision_tecnica }}</p>
-{% endif %}
-
-
-<a href="/diagnostico/{{item.id}}">
-<button style="width:100%;padding:18px;margin-bottom:10px">
-Diagnóstico técnico
-</button>
-</a>
-<h3>Precio de venta</h3>
-
-<form method="post" action="/precio/{{item.id}}">
-
-<input type="number" step="0.01" name="precio">
-
-<button type="submit">Guardar precio</button>
-
+<h3>Diagnóstico</h3>
+<form method="post" action="/actualizar_diagnostico/{{item.id}}">
+<textarea name="diagnostico" style="width:100%;height:120px;padding:10px;border-radius:8px">
+{{ item.diagnostico_inicial or "" }}
+</textarea>
+<br><br>
+<button type="submit">Guardar diagnóstico</button>
 </form>
 
+<h3>Historial</h3>
+{% for h in historial %}
+<div style="background:#f5f5f5;padding:10px;margin-bottom:8px;border-radius:8px">
+<b>{{ h.fecha.strftime("%d/%m/%Y %H:%M") }}</b><br>
+{{ h.diagnostico }}
+</div>
+{% endfor %}
 
 <h3>Código QR</h3>
 <img src="/qr/{{item.id}}" width="220">
 
-
-<div style="margin-top:20px">
-
 <h3>Fotos</h3>
-
 <form action="/subir_imagen/{{item.id}}" method="post" enctype="multipart/form-data">
-
 <input type="file" name="files" multiple accept="image/*">
-
-<button type="submit">Subir foto</button>
-
+<button type="submit">Subir fotos</button>
 </form>
 
 <a href="/imagenes/{{item.id}}">
 <button>Ver fotos</button>
 </a>
 
+<h3>Precio de venta</h3>
+<form method="post" action="/precio/{{item.id}}">
+<input type="number" step="0.01" name="precio">
+<button type="submit">Guardar precio</button>
+</form>
+
 <a href="/crear_pieza/{{item.id}}">
-<button style="width:100%;padding:18px;font-size:18px;margin-bottom:10px">
-Crear pieza
-</button>
+<button style="width:100%;padding:18px;margin-top:10px">Crear pieza</button>
 </a>
 
 <a href="/vender/{{item.id}}">
-<button style="width:100%;padding:18px;font-size:18px">
-Vender
-</button>
+<button style="width:100%;padding:18px;margin-top:10px">Vender</button>
 </a>
-
-</div>
-
-
-{% if item.decision_tecnica == "REPARAR" %}
-<div style="background:#d4edda;padding:12px;border-radius:8px;margin-bottom:15px;">
-<b>Reparación en curso</b><br>
-Este aparato está marcado para reparación. El despiece está bloqueado.
-</div>
-{% endif %}
-
-
-{% if not item.parent_id and item.decision_tecnica != "REPARAR" %}
-
-<h3 style="margin-top:30px">Crear piezas rápidas</h3>
-
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-
-<h3>Crear piezas</h3>
-
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-
-{% for pieza in piezas_disponibles %}
-
-<a href="/crear_pieza_directa/{{item.id}}/{{pieza.nombre}}">
-<button style="padding:18px;width:100%">
-{{pieza.nombre}}
-</button>
-</a>
-
-</form>
-
-</div>
-{% endfor %}
-
-</div>
-
-
-{% endif %}
-
-
 
 {% if item.parent_id %}
-
-<h3 style="margin-top:30px">Información de la pieza</h3>
-
+<h3>Información de la pieza</h3>
 <div style="background:white;padding:10px;border-radius:8px;">
-
-{% if item.nombre_pieza %}
 <strong>Nombre pieza:</strong> {{ item.nombre_pieza }} <br>
-{% endif %}
-
 {% if item.medidas %}
 <strong>Medidas:</strong> {{ item.medidas }} <br>
 {% endif %}
-
 <strong>Aparato origen:</strong>
-<a href="/item/{{item.parent_id}}">
-{{item.parent_id}}
-</a>
-
+<a href="/item/{{item.parent_id}}">{{item.parent_id}}</a>
 </div>
-
 {% endif %}
 
-
-
 {% if not item.parent_id %}
-
-<h3 style="margin-top:30px">Piezas del aparato</h3>
-
+<h3>Piezas del aparato</h3>
 {% for hijo in hijos %}
-
 <div style="background:white;padding:10px;margin:8px 0;border-radius:8px;">
-
 <strong>ID:</strong> {{hijo.id}} <br>
-
 {% if hijo.nombre_pieza %}
 <strong>Pieza:</strong> {{ hijo.nombre_pieza }} <br>
 {% endif %}
-
 {% if hijo.medidas %}
 <strong>Medidas:</strong> {{ hijo.medidas }} <br>
 {% endif %}
-
 <a href="/item/{{hijo.id}}">Ver pieza</a>
-
 </div>
-
 {% endfor %}
-
 {% endif %}
 
-
-
-<h3 style="margin-top:30px">Cambiar Estado</h3>
-
+<h3>Cambiar Estado</h3>
 <form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="FUNCIONA">
-FUNCIONA
-</button>
+<button type="submit" name="nuevo_estado" value="FUNCIONA">FUNCIONA</button>
+</form>
+<form method="post" action="/cambiar_estado_web/{{item.id}}">
+<button type="submit" name="nuevo_estado" value="ESTROPEADO">ESTROPEADO</button>
 </form>
 
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="ESTROPEADO">
-ESTROPEADO
-</button>
-</form>
-
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="REPARADO">
-REPARADO
-</button>
-</form>
-
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="VENTA_SEGUNDA_MANO">
-PREPARAR VENTA SEGUNDA MANO
-</button>
-</form>
-
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="VENTA_REACONDICIONADO">
-PREPARAR VENTA REACONDICIONADO
-</button>
-</form>
-
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="VENTA_NUEVO">
-PREPARAR VENTA NUEVO
-</button>
-</form>
-
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="PREPARAR_GOLPEADO_VENTA_NUEVO">
-PREPARAR GOLPEADO VENTA NUEVO
-</button>
-</form>
-
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="PREPARAR_GOLPEADO_REACONDICIONADO">
-PREPARAR GOLPEADO VENTA REACONDICIONADO
-</button>
-</form>
-</form>
-<a href="/print_qr/{{item.id}}" target="_blank">
-<button>Imprimir QR</button>
-</a>
-<a href="/etiqueta_pieza/{{item.id}}" target="_blank">
-<button>Imprimir etiqueta pieza</button>
-</a>
 <div style="margin-top:30px; padding:15px; background:#f8d7da; border-radius:10px;">
-
 <h3 style="color:red;">Zona peligrosa</h3>
-
 <form method="post" action="/eliminar_item/{{item.id}}">
-
 <input type="password" name="password" placeholder="Contraseña" style="width:100%;padding:10px;margin-bottom:10px;">
-
 <button type="submit" style="width:100%;padding:15px;background:red;color:white;">
 Eliminar artículo
 </button>
-
 </form>
-
-</a>
+</div>
 
 {% endblock %}
