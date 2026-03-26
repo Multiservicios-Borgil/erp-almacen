@@ -1,36 +1,31 @@
-{% extends "base.html" %}
-{% block title %}Login{% endblock %}
+{% extends “base.html” %} {% block title %}Login{% endblock %}
 
 {% block content %}
 
-<div style="max-width:400px;margin:50px auto;background:white;padding:25px;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,0.1);">
+    <h2 style="text-align:center;margin-bottom:20px;">Acceso</h2>
 
-    <h2 style="text-align:center;margin-bottom:20px;">Acceso</h2>
+    <form method="post" action="/login">
 
-    <form method="post" action="/login">
+        <input 
+            type="text" 
+            name="username" 
+            placeholder="Usuario"
+            required
+            style="width:100%;padding:12px;margin-bottom:12px;border-radius:8px;border:1px solid #ccc;">
 
-        <input 
-            type="text" 
-            name="username" 
-            placeholder="Usuario"
-            required
-            style="width:100%;padding:12px;margin-bottom:12px;border-radius:8px;border:1px solid #ccc;">
+        <input 
+            type="password" 
+            name="password" 
+            placeholder="Contraseña"
+            required
+            style="width:100%;padding:12px;margin-bottom:15px;border-radius:8px;border:1px solid #ccc;">
 
-        <input 
-            type="password" 
-            name="password" 
-            placeholder="Contraseña"
-            required
-            style="width:100%;padding:12px;margin-bottom:15px;border-radius:8px;border:1px solid #ccc;">
+        <button 
+            type="submit" 
+            style="width:100%;padding:15px;background:#007bff;color:white;border:none;border-radius:10px;font-size:16px;">
+            Entrar
+        </button>
 
-        <button 
-            type="submit" 
-            style="width:100%;padding:15px;background:#007bff;color:white;border:none;border-radius:10px;font-size:16px;">
-            Entrar
-        </button>
-
-    </form>
-
-</div>
+    </form>
 
 {% endblock %}
