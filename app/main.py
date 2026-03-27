@@ -1206,6 +1206,8 @@ async def auth_middleware(request: Request, call_next):
     rutas_publicas = [
         "/login",
         "/static",
+        "/etiqueta_pieza",
+        "/etiqueta_aparato",
         "/qr",  # para QR
     ]
 
