@@ -71,6 +71,29 @@
 <h3>Código QR</h3>
 <img src="/qr/{{item.id}}" width="220">
 
+
+<div style="margin-top:15px">
+
+<a href="/print_qr/{{item.id}}" target="_blank">
+<button style="width:100%;padding:12px;margin-bottom:10px">
+🖨 Imprimir QR
+</button>
+</a>
+
+<a href="/etiqueta_aparato/{{item.id}}" target="_blank">
+<button style="width:100%;padding:12px;margin-bottom:10px">
+🏷 Imprimir etiqueta aparato
+</button>
+</a>
+
+<a href="/etiqueta_pieza/{{item.id}}" target="_blank">
+<button style="width:100%;padding:12px">
+🏷 Imprimir etiqueta pieza
+</button>
+</a>
+
+</div>
+
 <h3 style="margin-top:20px">Fotos</h3>
 <form action="/subir_imagen/{{item.id}}" method="post" enctype="multipart/form-data">
 <input type="file" name="files" multiple accept="image/*">
