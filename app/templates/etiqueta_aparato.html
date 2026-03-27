@@ -1,58 +1,63 @@
 <!DOCTYPE html>
-
 <html>
-
 <head>
+<meta charset="UTF-8">
 
 <style>
-
-@page {
-size: 55mm 32mm;
-margin:0;
+body {
+    font-family: Arial;
+    text-align: center;
 }
 
-body{
-width:55mm;
-height:32mm;
-font-family:Arial;
-text-align:center;
-margin:0;
-padding:2mm;
+.etiqueta {
+    border: 2px solid black;
+    padding: 20px;
+    width: 300px;
+    margin: auto;
 }
 
-.id{
-font-size:14px;
-font-weight:bold;
-}
+@media print {
+    body {
+        margin: 0;
+    }
 
+    body * {
+        visibility: hidden;
+    }
+
+    .etiqueta, .etiqueta * {
+        visibility: visible;
+    }
+
+    .etiqueta {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+}
 </style>
 
 </head>
 
 <body onload="window.print()">
 
-<div class="id">
+<div class="etiqueta">
 
-{{item.id}}
+    <h2>{{ item.id }}</h2>
 
-</div>
+    <p><b>Familia:</b> {{ item.familia.nombre if item.familia else "" }}</p>
 
-<img src="/qr/{{item.id}}" width="90">
+    {% if item.marca %}
+    <p><b>Marca:</b> {{ item.marca }}</p>
+    {% endif %}
 
-</body>
+    {% if item.modelo %}
+    <p><b>Modelo:</b> {{ item.modelo }}</p>
+    {% endif %}
 
-</html>
-
-<body onload="window.print()">
-
-<div class="id">
-
-{{item.id}}
+    <img src="/qr/{{item.id}}" width="150">
 
 </div>
 
-<img class="qr" src="/qr/{{item.id}}" width="80">
-
 </body>
-
 </html>
