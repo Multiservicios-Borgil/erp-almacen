@@ -882,62 +882,103 @@ def buscar_piezas_avanzado(
     )
 
 
+from sqlalchemy import or_
+
+
 @app.get("/buscar_aparatos", response_class=HTMLResponse)
 def buscar_aparatos(
     request: Request,
+    q: str = "",
     familia_id: int = None,
     estado: str = "",
-    en_wallapop: str ="",
     db: Session = Depends(get_db),
 ):
-
+    # 🔥 SOLO APARATOS (NO piezas)
     query = db.query(Item).filter(Item.parent_id == None)
-    if en_wallapop == "si":
-        query = query.filter(Item.en_wallapop == True)
 
-    if en_wallapop == "no":
-        query = query.filter(Item.en_wallapop == False)
+
+    # 🔥 BUSCADOR GENERAL (ID + todo)
+    if q:
+        query = query.filter(
+            or_(
+                Item.id.ilike(f"%{q}%"),
+                Item.marca.ilike(f"%{q}%"),
+                Item.modelo.ilike(f"%{q}%"),
+            )
+        )
+
 
     if familia_id:
         query = query.filter(Item.familia_id == familia_id)
 
+
     if estado:
         query = query.filter(Item.estado_actual == estado)
 
-    aparatos = query.all()
 
+    aparatos = query.all()
     familias = db.query(Familia).all()
+
 
     return templates.TemplateResponse(
         "buscar_aparatos.html",
-        {"request": request, "aparatos": aparatos, "familias": familias},
+        {
+            "request": request,
+            "aparatos": aparatos,
+            "familias": familias,
+        },
     )
+
+
+from sqlalchemy import or_
 
 
 @app.get("/buscar_piezas", response_class=HTMLResponse)
 def buscar_piezas(
     request: Request,
+    q: str = "",
     marca: str = "",
     modelo: str = "",
     nombre_pieza: str = "",
     db: Session = Depends(get_db),
 ):
-
+    # 🔥 SOLO PIEZAS
     query = db.query(Item).filter(Item.parent_id != None)
+
+
+    # 🔥 BUSCADOR GENERAL
+    if q:
+        query = query.filter(
+            or_(
+                Item.id.ilike(f"%{q}%"),
+                Item.marca.ilike(f"%{q}%"),
+                Item.modelo.ilike(f"%{q}%"),
+                Item.nombre_pieza.ilike(f"%{q}%"),
+            )
+        )
+
 
     if marca:
         query = query.filter(Item.marca.ilike(f"%{marca}%"))
 
+
     if modelo:
         query = query.filter(Item.modelo.ilike(f"%{modelo}%"))
+
 
     if nombre_pieza:
         query = query.filter(Item.nombre_pieza.ilike(f"%{nombre_pieza}%"))
 
+
     piezas = query.all()
 
+
     return templates.TemplateResponse(
-        "buscar_piezas.html", {"request": request, "piezas": piezas}
+        "buscar_piezas.html",
+        {
+            "request": request,
+            "piezas": piezas,
+        }
     )
 
 
