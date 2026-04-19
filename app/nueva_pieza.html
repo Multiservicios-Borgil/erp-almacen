@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Crear Pieza Directa{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">➕ Crear Pieza Directa</h2>
+    <p style="color: #666; margin-bottom: 25px;">Usa este formulario para añadir piezas que ya tienes en stock o de origen desconocido.</p>
+
+    <form method="post" action="/crear_pieza_directa">
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 8px;">1. Categoría de Aparato</label>
+            <select name="familia" id="familia" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;">
+                <option value="">-- Selecciona el tipo de aparato --</option>
+                <option value="Lavadora">Lavadora</option>
+                <option value="Lavavajillas">Lavavajillas</option>
+                <option value="Frigorífico">Frigorífico</option>
+                <option value="Horno">Horno</option>
+                <option value="Vitroceramica">Vitrocerámica</option>
+                <option value="Placa de Induccion">Placa de Inducción</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 8px;">2. Tipo de Pieza</label>
+            <select name="nombre_pieza" id="pieza" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;">
+                <option value="">-- Primero selecciona el aparato --</option>
+            </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div class="form-group">
+                <label style="display: block; font-weight: bold; margin-bottom: 8px;">Marca</label>
+                <input type="text" name="marca" placeholder="ej: Bosch, Balay..." required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+            </div>
+            <div class="form-group">
+                <label style="display: block; font-weight: bold; margin-bottom: 8px;">Modelo</label>
+                <input type="text" name="modelo" placeholder="ej: WAN2426... (opcional)" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 25px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 8px;">Medidas o Notas</label>
+            <input type="text" name="medidas" placeholder="ej: 20cm, 12v, etc." style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+        </div>
+
+        <button type="submit" style="width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background 0.3s;">
+            ✅ Guardar Pieza en el Almacén
+        </button>
+    </form>
+</div>
+
+<script>
+document.getElementById("familia").addEventListener("change", function(){
+    const familia = this.value;
+    const selectPieza = document.getElementById("pieza");
+    
+    if(!familia) {
+        selectPieza.innerHTML = '<option value="">-- Primero selecciona el aparato --</option>';
+        return;
+    }
+
+    selectPieza.innerHTML = '<option value="">Cargando piezas...</option>';
+
+    fetch("/piezas_por_familia/" + encodeURIComponent(familia))
+        .then(response => response.json())
+        .then(data => {
+            selectPieza.innerHTML = '<option value="">-- Selecciona la pieza --</option>';
+            data.forEach(pieza => {
+                const option = document.createElement("option");
+                option.value = pieza;
+                option.text = pieza;
+                selectPieza.appendChild(option);
+            });
+        })
+        .catch(err => {
+            console.error("Error cargando piezas:", err);
+            selectPieza.innerHTML = '<option value="">Error al cargar piezas</option>';
+        });
+});
+</script>
+{% endblock %}

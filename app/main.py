@@ -548,17 +548,13 @@ def crear_pieza(
 
     db.add(pieza)
     db.commit()
+    # generar QR
     url = f"{request.base_url}item/{nuevo_id}"
     qr = qrcode.make(url)
-    qr.save(f"app/static/{nuevo_id}.png")
-    url = f"https://erp-almacen.onrender.com/item/{nuevo_id}"
-
     os.makedirs("app/static", exist_ok=True)
-
-    qr = qrcode.make(url)
     qr.save(f"app/static/{nuevo_id}.png")
 
-    return RedirectResponse(f"/item/{item_id}", status_code=303)
+    return RedirectResponse(f"/item/{nuevo_id}", status_code=303)
 
 
 @app.get("/backup_json")
@@ -742,7 +738,7 @@ def crear_pieza_directa(item_id: str, nombre: str, db: Session = Depends(get_db)
     db.add(pieza)
     db.commit()
 
-    return RedirectResponse(f"/item/{item_id}", status_code=303)
+    return RedirectResponse(f"/item/{nuevo_id}", status_code=303)
 
 
 @app.get("/diagnostico/{item_id}", response_class=HTMLResponse)
