@@ -37,7 +37,8 @@ FAMILIAS_PREDEFINIDAS = [
     "Microondas",
     "Aire acondicionado",
     "Termo eléctrico",
-    "Placa vitrocerámica",
+    "Vitroceramica",
+    "Placa de Induccion",
     "Campana extractora",
 ]
 PIEZAS_POR_FAMILIA = {
@@ -48,6 +49,13 @@ PIEZAS_POR_FAMILIA = {
         {"nombre": "Frontal", "medida": False},
         {"nombre": "Cajetin", "medida": False},
         {"nombre": "Bomba desague", "medida": False},
+        {"nombre": "Tapa superior", "medida": False},
+        {"nombre": "Electrovalvula", "medida": False},
+        {"nombre": "Presostato", "medida": False},
+        {"nombre": "Cajon detergente", "medida": False},
+        {"nombre": "Botonera", "medida": False},
+        {"nombre": "Resistencia", "medida": False},
+        {"nombre": "Blocapuertas", "medida": False},
     ],
     "Lavavajillas": [
         {"nombre": "Resistencia", "medida": False},
@@ -59,6 +67,14 @@ PIEZAS_POR_FAMILIA = {
         {"nombre": "Placa Frontal", "medida": False},
         {"nombre": "Placa Motor", "medida": False},
         {"nombre": "Tubo aquastop", "medida": False},
+        {"nombre": "Blocapuertas", "medida": False},
+        {"nombre": "Botonera", "medida": False},
+        {"nombre": "Placa electronica", "medida": False},
+        {"nombre": "Bomba desague", "medida": False},
+        {"nombre": "Motor", "medida": False},
+        {"nombre": "Jabonera", "medida": False},
+        {"nombre": "Tapa superior", "medida": False},
+        {"nombre": "Aquastop", "medida": False},
     ],
     "Frigorífico": [
         {"nombre": "Placa", "medida": False},
@@ -84,10 +100,16 @@ PIEZAS_POR_FAMILIA = {
     "Horno": [
         {"nombre": "Resistencia Superior", "medida": False},
         {"nombre": "Resistencia Inferior", "medida": False},
+        {"nombre": "Ventilador Superior", "medida": False},
+        {"nombre": "Ventilador Inferior", "medida": False},
         {"nombre": "Puerta", "medida": False},
+        {"nombre": "Manillera", "medida": False},
         {"nombre": "Tirador", "medida": False},
         {"nombre": "Selector", "medida": False},
+        {"nombre": "Selector temperatura", "medida": False},
         {"nombre": "Placa", "medida": False},
+        {"nombre": "Placa termostato", "medida": False},
+        {"nombre": "Termostato", "medida": False},
     ],
 }
 
