@@ -134,13 +134,37 @@ async def procesar_amazon(request: Request, file: UploadFile = File(...), db: Se
     contents = await file.read()
     wb = openpyxl.load_workbook(io.BytesIO(contents), data_only=True)
     sheet = wb.active
-    mapa = {"lavadora secadora": 12, "lavasecadora": 12, "lavadora": 1, "frigorifico": 2, "arcon": 11}
-    prefijos = {1:"LAV", 2:"FRI", 11:"ARC", 12:"LSEC"}
+    mapa = {
+        'lavadora secadora': 12, 'lavasecadora': 12, 'lavadora-secadora': 12,
+        'lavadora': 1, 'frigorifico': 2, 'frigo': 2, 'combi': 2, 'vinoteca': 2,
+        'secadora': 3, 'lavavajillas': 4, 'lavav': 4, 'lavaplatos': 4,
+        'horno': 5, 'arcon': 11, 'congelador': 11
+    }
+    prefijos = {1:"LAV", 2:"FRI", 3:"SEC", 4:"LAVV", 5:"HOR", 11:"ARC", 12:"LSEC"}
     items = []
+    # Identificar indices por nombre
+    headers = [str(cell).value.upper() if hasattr(cell, "value") else str(cell).upper() for cell in sheet[1]]
+    idx_tipo = headers.index('TIPO') if 'TIPO' in headers else -1
+    
     for row in sheet.iter_rows(min_row=2, values_only=True):
         if not row[2]: continue
-        desc = str(row[2]).lower()
-        fid = next((v for k,v in mapa.items() if k in desc), None)
+        
+        # 1. Prioridad: Columna TIPO manual
+        fid = None
+        if idx_tipo != -1 and row[idx_tipo]:
+            val_tipo = str(row[idx_tipo]).lower()
+            if 'lavasecadora' in val_tipo or ('lavadora' in val_tipo and 'secadora' in val_tipo): fid = 12
+            elif 'lavadora' in val_tipo: fid = 1
+            elif 'secadora' in val_tipo: fid = 3
+            elif 'frigo' in val_tipo or 'combi' in val_tipo: fid = 2
+            elif 'lavav' in val_tipo: fid = 4
+            elif 'horno' in val_tipo: fid = 5
+            elif 'arcon' in val_tipo or 'congelador' in val_tipo: fid = 11
+        
+        # 2. Si no hay TIPO, usar el adivinador
+        if fid is None:
+            desc = str(row[2]).lower()
+            fid = next((v for k,v in mapa.items() if k in desc), None)
         id_gen = f"{prefijos.get(fid, 'AMZ')}-{str(uuid.uuid4())[:4].upper()}"
         item = Item(id=id_gen, familia_id=fid, nombre_pieza=str(row[2])[:100], numero_serie=str(row[3]), estado_actual="PENDIENTE_CLASIFICAR", origen="AMAZON", camion=2)
         db.add(item)
@@ -156,13 +180,37 @@ async def procesar_camion_2(request: Request, db: Session = Depends(get_db)):
     if not os.path.exists(path): return HTMLResponse("Error: Excel no encontrado")
     wb = openpyxl.load_workbook(path, data_only=True)
     sheet = wb.active
-    mapa = {"lavadora secadora": 12, "lavadora": 1, "frigorifico": 2, "arcon": 11}
-    prefijos = {1:"LAV", 2:"FRI", 11:"ARC", 12:"LSEC"}
+    mapa = {
+        'lavadora secadora': 12, 'lavasecadora': 12, 'lavadora-secadora': 12,
+        'lavadora': 1, 'frigorifico': 2, 'frigo': 2, 'combi': 2, 'vinoteca': 2,
+        'secadora': 3, 'lavavajillas': 4, 'lavav': 4, 'lavaplatos': 4,
+        'horno': 5, 'arcon': 11, 'congelador': 11
+    }
+    prefijos = {1:"LAV", 2:"FRI", 3:"SEC", 4:"LAVV", 5:"HOR", 11:"ARC", 12:"LSEC"}
     items = []
+    # Identificar indices por nombre
+    headers = [str(cell).value.upper() if hasattr(cell, "value") else str(cell).upper() for cell in sheet[1]]
+    idx_tipo = headers.index('TIPO') if 'TIPO' in headers else -1
+    
     for row in sheet.iter_rows(min_row=2, values_only=True):
         if not row[2]: continue
-        desc = str(row[2]).lower()
-        fid = next((v for k,v in mapa.items() if k in desc), None)
+        
+        # 1. Prioridad: Columna TIPO manual
+        fid = None
+        if idx_tipo != -1 and row[idx_tipo]:
+            val_tipo = str(row[idx_tipo]).lower()
+            if 'lavasecadora' in val_tipo or ('lavadora' in val_tipo and 'secadora' in val_tipo): fid = 12
+            elif 'lavadora' in val_tipo: fid = 1
+            elif 'secadora' in val_tipo: fid = 3
+            elif 'frigo' in val_tipo or 'combi' in val_tipo: fid = 2
+            elif 'lavav' in val_tipo: fid = 4
+            elif 'horno' in val_tipo: fid = 5
+            elif 'arcon' in val_tipo or 'congelador' in val_tipo: fid = 11
+        
+        # 2. Si no hay TIPO, usar el adivinador
+        if fid is None:
+            desc = str(row[2]).lower()
+            fid = next((v for k,v in mapa.items() if k in desc), None)
         id_gen = f"{prefijos.get(fid, 'AMZ')}-{str(uuid.uuid4())[:4].upper()}"
         item = Item(id=id_gen, familia_id=fid, nombre_pieza=str(row[2])[:100], numero_serie=str(row[3]), estado_actual="PENDIENTE_CLASIFICAR", origen="AMAZON", camion=2)
         db.add(item)
