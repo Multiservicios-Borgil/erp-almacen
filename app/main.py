@@ -912,14 +912,8 @@ def buscar_aparatos(
     familias = db.query(Familia).all()
 
 
-    return templates.TemplateResponse(
-        "buscar_aparatos.html",
-        {
-            "request": request,
-            "aparatos": aparatos,
-            "familias": familias,
-        },
-    )
+    return templates.TemplateResponse(request=request, name="buscar_aparatos.html", context={
+            "request": request)
 
 
 from sqlalchemy import or_
@@ -965,12 +959,8 @@ def buscar_piezas(
     piezas = query.all()
 
 
-    return templates.TemplateResponse(
-        "buscar_piezas.html",
-        {
-            "request": request,
-            "piezas": piezas,
-        })
+    return templates.TemplateResponse(request=request, name="buscar_piezas.html", context={
+            "request": request)
 
 
 @app.get("/piezas_por_familia/{familia}")
