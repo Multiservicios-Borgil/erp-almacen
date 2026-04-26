@@ -25,22 +25,42 @@ FAMILIAS_PREDEFINIDAS = [
 PIEZAS_POR_FAMILIA = {
     "Lavadora": [
         {"nombre": "Puerta", "medida": True}, {"nombre": "Placa electronica", "medida": False},
-        {"nombre": "Motor", "medida": False}, {"nombre": "Bomba desague", "medida": False},
-        {"nombre": "Cajon detergente", "medida": False}, {"nombre": "Resistencia", "medida": False},
+        {"nombre": "Motor", "medida": False}, {"nombre": "Frontal", "medida": False},
+        {"nombre": "Cajetin", "medida": False}, {"nombre": "Bomba desague", "medida": False},
+        {"nombre": "Tapa superior", "medida": False}, {"nombre": "Electrovalvula", "medida": False},
+        {"nombre": "Presostato", "medida": False}, {"nombre": "Cajon detergente", "medida": False},
+        {"nombre": "Botonera", "medida": False}, {"nombre": "Resistencia", "medida": False},
         {"nombre": "Blocapuertas", "medida": False},
     ],
+    "Lavavajillas": [
+        {"nombre": "Resistencia", "medida": False}, {"nombre": "Bomba", "medida": False},
+        {"nombre": "Resistencia-Bomba", "medida": False}, {"nombre": "Cesta Superior", "medida": False},
+        {"nombre": "Cesta Inferior", "medida": False}, {"nombre": "Frontal", "medida": False},
+        {"nombre": "Placa Frontal", "medida": False}, {"nombre": "Placa Motor", "medida": False},
+        {"nombre": "Tubo aquastop", "medida": False}, {"nombre": "Blocapuertas", "medida": False},
+        {"nombre": "Botonera", "medida": False}, {"nombre": "Placa electronica", "medida": False},
+        {"nombre": "Bomba desague", "medida": False}, {"nombre": "Motor", "medida": False},
+        {"nombre": "Jabonera", "medida": False}, {"nombre": "Tapa superior", "medida": False},
+        {"nombre": "Aquastop", "medida": False},
+    ],
     "Frigorífico": [
-        {"nombre": "Placa", "medida": False}, {"nombre": "Motor-Compresor", "medida": False},
-        {"nombre": "Bandeja", "medida": True}, {"nombre": "Cajon frutas", "medida": True},
-        {"nombre": "Estante cristal", "medida": True},
+        {"nombre": "Placa", "medida": False}, {"nombre": "Placa-Motor", "medida": False},
+        {"nombre": "Arrancador", "medida": False}, {"nombre": "Bandeja", "medida": True},
+        {"nombre": "Botellero", "medida": False}, {"nombre": "Cajon lateral", "medida": False},
+        {"nombre": "Cajon Congelador Superior", "medida": True}, {"nombre": "Cajon Congelador Medio", "medida": True},
+        {"nombre": "Cajon Congelador Inferior", "medida": True}, {"nombre": "Cajon Izd frigo", "medida": True},
+        {"nombre": "Cajon derecho frigo", "medida": True},
     ],
     "Arcón frigorífico": [
         {"nombre": "Motor-Compresor", "medida": False}, {"nombre": "Termostato", "medida": False},
-        {"nombre": "Tapa", "medida": True}, {"nombre": "Cesta interior", "medida": True},
+        {"nombre": "Tapa", "medida": True}, {"nombre": "Bisagra", "medida": False},
+        {"nombre": "Cesta interior", "medida": True}, {"nombre": "Asa / Tirador", "medida": False},
     ],
     "Lavadora-Secadora": [
         {"nombre": "Puerta", "medida": True}, {"nombre": "Placa electronica", "medida": False},
-        {"nombre": "Motor", "medida": False}, {"nombre": "Resistencia secado", "medida": False},
+        {"nombre": "Motor", "medida": False}, {"nombre": "Bomba desague", "medida": False},
+        {"nombre": "Resistencia secado", "medida": False}, {"nombre": "Ventilador secado", "medida": False},
+        {"nombre": "Blocapuertas", "medida": False},
     ],
 }
 
@@ -75,6 +95,11 @@ def nuevo_form(request: Request, db: Session = Depends(get_db)):
     familias = db.query(Familia).all()
     return templates.TemplateResponse(request=request, name="nuevo.html", context={"familias": familias})
 
+@app.get("/stock_view", response_class=HTMLResponse)
+def stock_view(request: Request, db: Session = Depends(get_db)):
+    items = db.query(Item).filter(Item.en_stock == True).all()
+    return templates.TemplateResponse(request=request, name="stock.html", context={"items": items})
+
 @app.post("/crear_item_web")
 def crear_item_web(request: Request, familia_id: int = Form(...), numero_serie: str = Form(...), 
                    marca: str = Form(...), modelo: str = Form(None), origen: str = Form(...), 
@@ -98,15 +123,6 @@ def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
     historial = db.query(HistorialDiagnostico).filter(HistorialDiagnostico.item_id == item_id).order_by(HistorialDiagnostico.fecha.desc()).all()
     return templates.TemplateResponse(request=request, name="item.html", context={"item": item, "hijos": hijos, "historial": historial})
 
-@app.get("/stock_view", response_class=HTMLResponse)
-def stock_view(request: Request, db: Session = Depends(get_db)):
-    items = db.query(Item).filter(Item.en_stock == True).all()
-    return templates.TemplateResponse(request=request, name="stock.html", context={"items": items})
-
-@app.get("/scan", response_class=HTMLResponse)
-def scan_page(request: Request):
-    return templates.TemplateResponse(request=request, name="scan.html")
-
 @app.post("/subir_imagen/{item_id}")
 async def subir_imagen(item_id: str, files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
     fotos_existentes = db.query(Imagen).filter(Imagen.item_id == item_id).count()
@@ -124,6 +140,10 @@ async def subir_imagen(item_id: str, files: List[UploadFile] = File(...), db: Se
         fotos_existentes += 1
     return RedirectResponse(f"/item/{item_id}", status_code=303)
 
+@app.get("/scan", response_class=HTMLResponse)
+def scan_page(request: Request):
+    return templates.TemplateResponse(request=request, name="scan.html")
+
 @app.get("/vender/{item_id}", response_class=HTMLResponse)
 def vender_form(item_id: str, request: Request, db: Session = Depends(get_db)):
     item = db.query(Item).filter(Item.id == item_id).first()
@@ -138,6 +158,14 @@ def procesar_venta(item_id: str, numero_factura: str = Form(None), tipo_venta: s
     db.commit()
     return RedirectResponse("/stock_view", status_code=303)
 
+@app.post("/actualizar_diagnostico/{item_id}")
+def actualizar_diagnostico(item_id: str, diagnostico: str = Form(...), db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    db.add(HistorialDiagnostico(item_id=item_id, diagnostico=diagnostico))
+    item.diagnostico_inicial = diagnostico
+    db.commit()
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+
 @app.get("/etiqueta_aparato/{item_id}", response_class=HTMLResponse)
 def etiqueta_aparato(item_id: str, request: Request, db: Session = Depends(get_db)):
     item = db.query(Item).filter(Item.id == item_id).first()
@@ -148,22 +176,6 @@ def etiqueta_pieza(item_id: str, request: Request, db: Session = Depends(get_db)
     pieza = db.query(Item).filter(Item.id == item_id).first()
     return templates.TemplateResponse(request=request, name="etiqueta_pieza.html", context={"pieza": pieza})
 
-@app.post("/actualizar_diagnostico/{item_id}")
-def actualizar_diagnostico(item_id: str, diagnostico: str = Form(...), db: Session = Depends(get_db)):
-    item = db.query(Item).filter(Item.id == item_id).first()
-    db.add(HistorialDiagnostico(item_id=item_id, diagnostico=diagnostico))
-    item.diagnostico_inicial = diagnostico
-    db.commit()
-    return RedirectResponse(f"/item/{item_id}", status_code=303)
-
-@app.post("/eliminar_item/{item_id}")
-def eliminar_item(item_id: str, password: str = Form(...), db: Session = Depends(get_db)):
-    if password != "3539": return HTMLResponse("Contraseña incorrecta")
-    db.query(Imagen).filter(Imagen.item_id == item_id).delete()
-    db.query(Item).filter(Item.id == item_id).delete()
-    db.commit()
-    return RedirectResponse("/panel", status_code=303)
-
 @app.get("/qr/{item_id}")
 def generar_qr(item_id: str, request: Request):
     img = qrcode.make(f"{request.base_url}item/{item_id}")
@@ -172,7 +184,7 @@ def generar_qr(item_id: str, request: Request):
     buf.seek(0)
     return StreamingResponse(buf, media_type="image/png")
 
-# --- AMAZON ---
+# --- AMAZON TRUCK ---
 @app.get("/importar_amazon", response_class=HTMLResponse)
 def importar_amazon_form(request: Request):
     return templates.TemplateResponse(request=request, name="importar_amazon.html")
