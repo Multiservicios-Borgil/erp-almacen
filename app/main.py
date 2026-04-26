@@ -492,7 +492,7 @@ def cambiar_estado_web(
 
 @app.get("/scan", response_class=HTMLResponse)
 def scan_page(request: Request):
-    return templates.TemplateResponse("scan.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="scan.html", context={"request": request})
 
 
 @app.get("/vender/{item_id}", response_class=HTMLResponse)
@@ -502,7 +502,7 @@ def vender_form(item_id: str, request: Request, db: Session = Depends(get_db)):
     if not item:
         return HTMLResponse("<h2>Item no encontrado</h2>")
 
-    return templates.TemplateResponse("vender.html", {"request": request, "item": item})
+    return templates.TemplateResponse(request=request, name="vender.html", context={"request": request, "item": item})
 
 
 @app.post("/vender/{item_id}")
@@ -1232,7 +1232,7 @@ PASSWORD = "1234"
 
 @app.get("/login", response_class=HTMLResponse)
 def login_form(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="login.html", context={"request": request})
 
 @app.post("/login")
 def login(username: str = Form(...), password: str = Form(...)):
@@ -1263,7 +1263,7 @@ import io
 
 @app.get("/importar_amazon", response_class=HTMLResponse)
 def importar_amazon_form(request: Request):
-    return templates.TemplateResponse("importar_amazon.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="importar_amazon.html", context={"request": request})
 
 @app.post("/importar_amazon")
 async def procesar_amazon(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
@@ -1297,7 +1297,7 @@ async def procesar_amazon(request: Request, file: UploadFile = File(...), db: Se
         os.makedirs("app/static", exist_ok=True)
         qr.save(f"app/static/{nuevo_id}.png")
     db.commit()
-    return templates.TemplateResponse("etiquetas_lote.html", {"request": request, "items": items_creados})
+    return templates.TemplateResponse(request=request, name="etiquetas_lote.html", context={"request": request, "items": items_creados})
 
 @app.get("/procesar_camion_2")
 async def procesar_camion_2(request: Request, db: Session = Depends(get_db)):
@@ -1332,5 +1332,5 @@ async def procesar_camion_2(request: Request, db: Session = Depends(get_db)):
         qr = qrcode.make(url)
         qr.save(f"app/static/{nuevo_id}.png")
     db.commit()
-    return templates.TemplateResponse("etiquetas_lote.html", {"request": request, "items": items_creados})
+    return templates.TemplateResponse(request=request, name="etiquetas_lote.html", context={"request": request, "items": items_creados})
 
