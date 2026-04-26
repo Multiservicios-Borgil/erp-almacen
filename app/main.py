@@ -912,8 +912,7 @@ def buscar_aparatos(
     familias = db.query(Familia).all()
 
 
-    return templates.TemplateResponse(request=request, name="buscar_aparatos.html", context={
-            "request": request)
+    return templates.TemplateResponse(request=request, name="buscar_aparatos.html", context={"request": request, "aparatos": aparatos, "familias": familias})
 
 
 from sqlalchemy import or_
