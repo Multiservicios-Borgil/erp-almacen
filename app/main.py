@@ -1306,7 +1306,203 @@ async def auth_middleware(request: Request, call_next):
 
 
 # ---------------- IMPORTAR AMAZON ----------------
-import pandas as pd
+import openpyxl
+import io
+
+
+@app.get("/importar_amazon", response_class=HTMLResponse)
+def importar_amazon_form(request: Request):
+    return templates.TemplateResponse("importar_amazon.html", {"request": request})
+
+
+
+    db.delete(imagen)
+    db.commit()
+
+    return {"ok": True}
+
+
+@app.post("/actualizar_diagnostico/{item_id}")
+def actualizar_diagnostico(
+    item_id: str, diagnostico: str = Form(...), db: Session = Depends(get_db)
+):
+
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    if not item:
+        return HTMLResponse("<h2>Item no encontrado</h2>")
+
+    # guardar historial
+    historial = HistorialDiagnostico(item_id=item_id, diagnostico=diagnostico)
+
+    db.add(historial)
+
+    # actualizar diagnóstico actual
+    item.diagnostico_inicial = diagnostico
+
+    db.commit()
+
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+
+@app.post("/actualizar_diagnostico/{item_id}")
+def actualizar_diagnostico(
+    item_id: str, diagnostico: str = Form(...), db: Session = Depends(get_db)
+):
+
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    if not item:
+        return HTMLResponse("<h2>Item no encontrado</h2>")
+
+    item.diagnostico_inicial = diagnostico
+    db.commit()
+
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+
+from fastapi.responses import HTMLResponse
+from fastapi import Request, Depends
+from sqlalchemy.orm import Session
+
+def optimizar_imagen(imagen_bytes):
+    from PIL import Image
+    import io
+
+    img = Image.open(io.BytesIO(imagen_bytes))
+
+    # Convertir a RGB (muy importante)
+    if img.mode != "RGB":
+        img = img.convert("RGB")
+
+    # REDUCIR TAMAÑO (CLAVE)
+    img.thumbnail((800, 800))
+
+    output = io.BytesIO()
+
+    # COMPRESIÓN FUERTE (CLAVE)
+    img.save(output, format="JPEG", quality=60, optimize=True)
+
+    return output.getvalue()
+
+@app.post("/eliminar_item/{item_id}")
+def eliminar_item(
+    item_id: str,
+    password: str = Form(...),
+    db: Session = Depends(get_db),
+):
+
+    PASSWORD_ADMIN = "3539"  # 🔥 cámbiala
+
+    if password != PASSWORD_ADMIN:
+        return HTMLResponse("<h2>Contraseña incorrecta</h2>")
+
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+    if not item:
+        return HTMLResponse("<h2>Item no encontrado</h2>")
+
+    # eliminar también imágenes
+    db.query(Imagen).filter(Imagen.item_id == item_id).delete()
+
+    db.delete(item)
+    db.commit()
+
+    return RedirectResponse("/panel", status_code=303)
+
+@app.post("/toggle_wallapop/{item_id}")
+def toggle_wallapop(item_id: str, db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+
+
+    if not item:
+        return HTMLResponse("<h2>Item no encontrado</h2>")
+
+
+    item.en_wallapop = not item.en_wallapop
+    db.commit()
+
+
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+# ---------------- LOGIN CONFIG ----------------
+from fastapi import Request, Form, HTTPException
+from fastapi.responses import RedirectResponse, HTMLResponse
+
+
+USUARIO = "admin"
+PASSWORD = "1234"  # 🔥 cámbiala
+
+
+# ---------------- LOGIN ----------------
+@app.get("/login", response_class=HTMLResponse)
+def login_form(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+
+
+
+@app.post("/login")
+def login(username: str = Form(...), password: str = Form(...)):
+    if username == USUARIO and password == PASSWORD:
+        response = RedirectResponse("/panel", status_code=303)
+
+
+        response.set_cookie(
+            key="auth",
+            value="ok",
+            max_age=60 * 60 * 24 * 30,  # 30 días
+            httponly=True
+        )
+
+
+        return response
+
+
+    return HTMLResponse("<h2>Login incorrecto</h2>")
+
+
+
+
+# ---------------- LOGOUT ----------------
+@app.get("/logout")
+def logout():
+    response = RedirectResponse("/login")
+    response.delete_cookie("auth")
+    return response
+
+
+
+
+# ---------------- MIDDLEWARE SEGURIDAD ----------------
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+
+
+    rutas_publicas = [
+        "/login",
+        "/static",
+        "/etiqueta_pieza",
+        "/etiqueta_aparato",
+        "/qr",  # para QR
+    ]
+
+
+    # permitir rutas públicas
+    if any(request.url.path.startswith(r) for r in rutas_publicas):
+        return await call_next(request)
+
+
+    # comprobar cookie
+    if request.cookies.get("auth") != "ok":
+        return RedirectResponse("/login")
+
+
+    return await call_next(request)
+
+
+# ---------------- IMPORTAR AMAZON ----------------
+import openpyxl
 import io
 
 
@@ -1321,73 +1517,101 @@ async def procesar_amazon(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-    # 1. Leer Excel
+    # 1. Leer Excel con openpyxl
     contents = await file.read()
-    df = pd.read_excel(io.BytesIO(contents))
+    wb = openpyxl.load_workbook(io.BytesIO(contents), data_only=True)
+    sheet = wb.active
     
-    # 2. Mapeo de familias por palabras clave (IMPORTANTE ORDEN)
     mapa_familias = {
-        "lavadora secadora": 12,
-        "lavasecadora": 12,
-        "lavadora": 1,
-        "secadora": 3,
-        "frigorifico": 2,
-        "frigo": 2,
-        "vinoteca": 2,
-        "vino": 2,
-        "lavavajillas": 4,
-        "horno": 5,
-        "microondas": 6,
-        "aire": 7,
-        "termo": 8,
-        "vitro": 9,
-        "campana": 10,
-        "arcon": 11,
-        "congelador": 11
+        "lavadora secadora": 12, "lavasecadora": 12, "lavadora": 1, "secadora": 3,
+        "frigorifico": 2, "frigo": 2, "vinoteca": 2, "vino": 2,
+        "lavavajillas": 4, "horno": 5, "microondas": 6, "aire": 7,
+        "termo": 8, "vitro": 9, "campana": 10, "arcon": 11, "congelador": 11
     }
-    
-    prefijos = {1: "LAV", 2: "FRI", 3: "SEC", 4: "LAVV", 5: "HOR", 6: "MIC", 7: "AIRE", 8: "TER", 9: "VIT", 10: "CAM", 11: "ARC"}
+    prefijos = {1: "LAV", 2: "FRI", 3: "SEC", 4: "LAVV", 5: "HOR", 6: "MIC", 7: "AIRE", 8: "TER", 9: "VIT", 10: "CAM", 11: "ARC", 12: "LSEC"}
 
     items_creados = []
-    
-    for _, row in df.iterrows():
-        desc = str(row['ItemDesc']).lower()
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        if not row[2]: continue
+        desc = str(row[2]).lower()
         familia_id = None
-        
-        # Detectar familia
         for clave, fid in mapa_familias.items():
             if clave in desc:
                 familia_id = fid
                 break
         
-        # Si no detecta familia, usamos AMZ
         prefijo = prefijos.get(familia_id, "AMZ")
         nuevo_id = f"{prefijo}-{str(uuid.uuid4())[:4].upper()}"
         
         item = Item(
             id=nuevo_id,
             familia_id=familia_id,
-            marca=None, 
-            modelo=None,
-            nombre_pieza=str(row['ItemDesc'])[:100], 
-            numero_serie=str(row['ASIN']),
+            nombre_pieza=str(row[2])[:100], 
+            numero_serie=str(row[3]),
             estado_actual="PENDIENTE_CLASIFICAR",
             origen="AMAZON_TRUCK",
-            en_stock=True
+            en_stock=True,
+            camion=2
         )
-        
         db.add(item)
         items_creados.append(item)
         
-        # Generar QR
+        # QR
         url = f"{request.base_url}item/{nuevo_id}"
         qr = qrcode.make(url)
         os.makedirs("app/static", exist_ok=True)
         qr.save(f"app/static/{nuevo_id}.png")
 
     db.commit()
+    return templates.TemplateResponse("etiquetas_lote.html", {"request": request, "items": items_creados})
+
+
+@app.get("/procesar_camion_2")
+async def procesar_camion_2(request: Request, db: Session = Depends(get_db)):
+    file_path = "Copia de ELECTRO ILLUECA 2.xlsx"
+    if not os.path.exists(file_path):
+        return HTMLResponse("<h2>Error: No se encuentra el archivo 'Copia de ELECTRO ILLUECA 2.xlsx' en la carpeta raíz.</h2>")
     
-    return templates.TemplateResponse(
-        "etiquetas_lote.html", 
-        {"request": request, "items": items_creados}
-    )
+    wb = openpyxl.load_workbook(file_path, data_only=True)
+    sheet = wb.active
+    
+    mapa_familias = {
+        "lavadora secadora": 12, "lavasecadora": 12, "lavadora": 1, "secadora": 3,
+        "frigorifico": 2, "frigo": 2, "vinoteca": 2, "vino": 2,
+        "lavavajillas": 4, "horno": 5, "microondas": 6, "aire": 7,
+        "termo": 8, "vitro": 9, "campana": 10, "arcon": 11, "congelador": 11
+    }
+    prefijos = {1: "LAV", 2: "FRI", 3: "SEC", 4: "LAVV", 5: "HOR", 6: "MIC", 7: "AIRE", 8: "TER", 9: "VIT", 10: "CAM", 11: "ARC", 12: "LSEC"}
+
+    items_creados = []
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        if not row[2]: continue
+        desc = str(row[2]).lower()
+        familia_id = None
+        for clave, fid in mapa_familias.items():
+            if clave in desc:
+                familia_id = fid
+                break
+        
+        prefijo = prefijos.get(familia_id, "AMZ")
+        nuevo_id = f"{prefijo}-{str(uuid.uuid4())[:4].upper()}"
+        
+        item = Item(
+            id=nuevo_id,
+            familia_id=familia_id,
+            nombre_pieza=str(row[2])[:100], 
+            numero_serie=str(row[3]),
+            estado_actual="PENDIENTE_CLASIFICAR",
+            origen="AMAZON_TRUCK",
+            en_stock=True,
+            camion=2
+        )
+        db.add(item)
+        items_creados.append(item)
+        
+        url = f"{request.base_url}item/{nuevo_id}"
+        qr = qrcode.make(url)
+        qr.save(f"app/static/{nuevo_id}.png")
+
+    db.commit()
+    return templates.TemplateResponse("etiquetas_lote.html", {"request": request, "items": items_creados})
