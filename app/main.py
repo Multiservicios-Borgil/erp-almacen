@@ -73,6 +73,32 @@ def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
     historial = db.query(HistorialDiagnostico).filter(HistorialDiagnostico.item_id == item_id).order_by(HistorialDiagnostico.fecha.desc()).all()
     return templates.TemplateResponse(request=request, name="item.html", context={"request": request, "item": item, "hijos": hijos, "historial": historial})
 
+@app.post("/subir_imagen/{item_id}")
+async def subir_imagen(item_id: str, files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
+    fotos_existentes = db.query(Imagen).filter(Imagen.item_id == item_id).count()
+    for file in files:
+        if fotos_existentes >= 5: break
+        filename = f"{item_id}_{fotos_existentes+1}.jpg"
+        contenido = await file.read()
+        comprimido = optimizar_imagen(contenido)
+        url = f"{SUPABASE_URL}/storage/v1/object/imagenes/{filename}"
+        headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": "image/jpeg"}
+        requests.put(url, headers=headers, data=comprimido)
+        img_db = Imagen(item_id=item_id, url=f"{SUPABASE_URL}/storage/v1/object/public/imagenes/{filename}", orden=fotos_existentes+1)
+        db.add(img_db)
+        db.commit()
+        fotos_existentes += 1
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+@app.post("/actualizar_diagnostico/{item_id}")
+def actualizar_diagnostico(item_id: str, diagnostico: str = Form(...), db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    db.add(HistorialDiagnostico(item_id=item_id, diagnostico=diagnostico))
+    item.diagnostico_inicial = diagnostico
+    db.commit()
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+
 @app.post("/importar_amazon")
 async def procesar_amazon(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
     contents = await file.read()
@@ -168,6 +194,14 @@ def login(username: str = Form(...), password: str = Form(...)):
         res.set_cookie(key="auth", value="ok", httponly=True)
         return res
     return HTMLResponse("Login incorrecto")
+
+@app.get("/qr/{item_id}")
+def generar_qr(item_id: str, request: Request):
+    img = qrcode.make(f"{request.base_url}item/{item_id}")
+    buf = io.BytesIO()
+    img.save(buf)
+    buf.seek(0)
+    return StreamingResponse(buf, media_type="image/png")
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
