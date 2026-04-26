@@ -162,12 +162,19 @@ def buscar_aparatos(request: Request, q: str = "", familia_id: int = None, estad
     return templates.TemplateResponse(request=request, name="buscar_aparatos.html", context={"request": request, "aparatos": aparatos, "familias": familias})
 
 @app.get("/buscar_piezas", response_class=HTMLResponse)
-def buscar_piezas(request: Request, q: str = "", marca: str = "", modelo: str = "", nombre_pieza: str = "", db: Session = Depends(get_db)):
-    query = db.query(Item).filter(Item.parent_id != None)
+def buscar_piezas(request: Request, q: str = "", familia: str = "", marca: str = "", modelo: str = "", nombre_pieza: str = "", db: Session = Depends(get_db)):
+    query = db.query(Item).filter(Item.nombre_pieza != None)
+    
     if q: query = query.filter(or_(Item.id.ilike(f"%{q}%"), Item.marca.ilike(f"%{q}%"), Item.modelo.ilike(f"%{q}%"), Item.nombre_pieza.ilike(f"%{q}%")))
+    
+    if familia:
+        f_obj = db.query(Familia).filter(Familia.nombre == familia).first()
+        if f_obj: query = query.filter(Item.familia_id == f_obj.id)
+        
     if marca: query = query.filter(Item.marca.ilike(f"%{marca}%"))
     if modelo: query = query.filter(Item.modelo.ilike(f"%{modelo}%"))
     if nombre_pieza: query = query.filter(Item.nombre_pieza.ilike(f"%{nombre_pieza}%"))
+    
     piezas = query.all()
     return templates.TemplateResponse(request=request, name="buscar_piezas.html", context={"request": request, "piezas": piezas})
 
