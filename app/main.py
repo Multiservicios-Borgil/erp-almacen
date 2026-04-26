@@ -348,17 +348,13 @@ def root():
 @app.get("/panel", response_class=HTMLResponse)
 def panel(request: Request, db: Session = Depends(get_db)):
     familias = db.query(Familia).all()
-    return templates.TemplateResponse(
-        "panel.html", {"request": request, "familias": familias}
-    )
+    return templates.TemplateResponse(request=request, name="panel.html", context={"familias": familias})
 
 
 @app.get("/nuevo", response_class=HTMLResponse)
 def nuevo_form(request: Request, db: Session = Depends(get_db)):
     familias = db.query(Familia).all()
-    return templates.TemplateResponse(
-        "nuevo.html", {"request": request, "familias": familias}
-    )
+    return templates.TemplateResponse(request=request, name="nuevo.html", context={"familias": familias})
 
 
 from fastapi import Form
@@ -383,9 +379,7 @@ def stock_view(request: Request, db: Session = Depends(get_db)):
             }
         )
 
-    return templates.TemplateResponse(
-        "stock.html", {"request": request, "items": items}
-    )
+    return templates.TemplateResponse(request=request, name="stock.html", context={"items": items})
 
 
 import qrcode
@@ -464,15 +458,9 @@ def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
         .order_by(HistorialDiagnostico.fecha.desc())\
         .all()
 
-    return templates.TemplateResponse(
-        "item.html",
-        {
-            "request": request,
-            "item": item,
+    return templates.TemplateResponse(request=request, name="item.html", context={"item": item,
             "hijos": hijos,
-            "historial": historial
-        }
-    )
+            "historial": historial})
 
 
 @app.post("/cambiar_estado_web/{item_id}")
@@ -532,9 +520,7 @@ def procesar_venta(
 
 @app.get("/crear_pieza/{item_id}", response_class=HTMLResponse)
 def crear_pieza_form(item_id: str, request: Request):
-    return templates.TemplateResponse(
-        "crear_pieza.html", {"request": request, "parent_id": item_id}
-    )
+    return templates.TemplateResponse(request=request, name="crear_pieza.html", context={"parent_id": item_id})
 
 
 import qrcode
@@ -606,9 +592,7 @@ def buscar(q: str, request: Request, db: Session = Depends(get_db)):
     if item:
         return RedirectResponse(f"/item/{item.id}", status_code=303)
 
-    return templates.TemplateResponse(
-        "panel.html", {"request": request, "error": "Artículo no encontrado"}
-    )
+    return templates.TemplateResponse(request=request, name="panel.html", context={"error": "Artículo no encontrado"})
 
 
 @app.get("/export_csv")
@@ -712,13 +696,7 @@ def buscar_piezas(
 
     piezas = query.all()
 
-    return templates.TemplateResponse(
-        "buscar_piezas.html",
-        {
-            "request": request,
-            "piezas": piezas
-        }
-    )
+    return templates.TemplateResponse(request=request, name="buscar_piezas.html", context={"piezas": piezas})
 
 
 @app.get("/crear_pieza_directa/{item_id}/{nombre}")
@@ -764,9 +742,7 @@ def diagnostico_form(item_id: str, request: Request, db: Session = Depends(get_d
 
     item = db.query(Item).filter(Item.id == item_id).first()
 
-    return templates.TemplateResponse(
-        "diagnostico.html", {"request": request, "item": item}
-    )
+    return templates.TemplateResponse(request=request, name="diagnostico.html", context={"item": item})
 
 
 @app.post("/diagnostico/{item_id}")
@@ -792,9 +768,7 @@ def nueva_pieza_form(request: Request, db: Session = Depends(get_db)):
 
     familias = db.query(Familia).all()
 
-    return templates.TemplateResponse(
-        "nueva_pieza.html", {"request": request, "familias": familias}
-    )
+    return templates.TemplateResponse(request=request, name="nueva_pieza.html", context={"familias": familias})
 
 
 @app.post("/crear_pieza_directa")
@@ -854,9 +828,7 @@ def print_qr(item_id: str, request: Request, db: Session = Depends(get_db)):
 
     item = db.query(Item).filter(Item.id == item_id).first()
 
-    return templates.TemplateResponse(
-        "print_qr.html", {"request": request, "item": item}
-    )
+    return templates.TemplateResponse(request=request, name="print_qr.html", context={"item": item})
 
 
 @app.get("/print_pieza/{item_id}", response_class=HTMLResponse)
@@ -864,9 +836,7 @@ def print_pieza(item_id: str, request: Request, db: Session = Depends(get_db)):
 
     pieza = db.query(Item).filter(Item.id == item_id).first()
 
-    return templates.TemplateResponse(
-        "print_pieza.html", {"request": request, "pieza": pieza}
-    )
+    return templates.TemplateResponse(request=request, name="print_pieza.html", context={"pieza": pieza})
 
 
 import qrcode
@@ -912,9 +882,7 @@ def buscar_piezas_avanzado(
 
     familias = db.query(Familia).all()
 
-    return templates.TemplateResponse(
-        "buscar_piezas.html",
-        {"request": request, "piezas": piezas, "familias": familias},
+    return templates.TemplateResponse(request=request, name="buscar_piezas.html", context={"piezas": piezas, "familias": familias},
     )
 
 
@@ -1013,9 +981,7 @@ def buscar_piezas(
         "buscar_piezas.html",
         {
             "request": request,
-            "piezas": piezas,
-        }
-    )
+            "piezas": piezas,})
 
 
 @app.get("/piezas_por_familia/{familia}")
@@ -1031,9 +997,7 @@ def etiqueta_pieza(item_id: str, request: Request, db: Session = Depends(get_db)
 
     pieza = db.query(Item).filter(Item.id == item_id).first()
 
-    return templates.TemplateResponse(
-        "etiqueta_pieza.html", {"request": request, "pieza": pieza}
-    )
+    return templates.TemplateResponse(request=request, name="etiqueta_pieza.html", context={"pieza": pieza})
 
 
 @app.get("/etiqueta_aparato/{item_id}", response_class=HTMLResponse)
@@ -1041,9 +1005,7 @@ def etiqueta_aparato(item_id: str, request: Request, db: Session = Depends(get_d
 
     item = db.query(Item).filter(Item.id == item_id).first()
 
-    return templates.TemplateResponse(
-        "etiqueta_aparato.html", {"request": request, "item": item}
-    )
+    return templates.TemplateResponse(request=request, name="etiqueta_aparato.html", context={"item": item})
 
 
 @app.get("/etiqueta_pieza/{item_id}", response_class=HTMLResponse)
@@ -1051,9 +1013,7 @@ def etiqueta_pieza(item_id: str, request: Request, db: Session = Depends(get_db)
 
     pieza = db.query(Item).filter(Item.id == item_id).first()
 
-    return templates.TemplateResponse(
-        "etiqueta_pieza.html", {"request": request, "pieza": pieza}
-    )
+    return templates.TemplateResponse(request=request, name="etiqueta_pieza.html", context={"pieza": pieza})
 
 
 from fastapi import UploadFile, File
@@ -1104,9 +1064,7 @@ def ver_imagenes(item_id: str, request: Request, db: Session = Depends(get_db)):
 
     fotos = db.query(Imagen).filter(Imagen.item_id == item_id).all()
 
-    return templates.TemplateResponse(
-        "imagenes.html", {"request": request, "fotos": fotos, "item_id": item_id}
-    )
+    return templates.TemplateResponse(request=request, name="imagenes.html", context={"fotos": fotos, "item_id": item_id})
 
 
 @app.post("/borrar_imagen/{imagen_id}")
