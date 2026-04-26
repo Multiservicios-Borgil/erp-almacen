@@ -232,6 +232,12 @@ async def procesar_amazon(request: Request, file: UploadFile = File(...), db: Se
 
 @app.get("/procesar_camion_2")
 async def procesar_camion_2(request: Request, db: Session = Depends(get_db)):
+    # 1. Comprobar si ya existen items del camion 2 en la base de datos
+    existentes = db.query(Item).filter(Item.camion == 2).all()
+    if existentes:
+        # Si ya existen, devolvemos las etiquetas de los que ya tenemos
+        return templates.TemplateResponse(request=request, name="etiquetas_lote.html", context={"request": request, "items": existentes})
+
     path = "Copia de ELECTRO ILLUECA 2.xlsx"
     if not os.path.exists(path): return HTMLResponse("Error: Excel no encontrado")
     wb = openpyxl.load_workbook(path, data_only=True)
@@ -260,8 +266,6 @@ async def procesar_camion_2(request: Request, db: Session = Depends(get_db)):
         item = Item(id=id_gen, familia_id=fid, nombre_pieza=str(row[2])[:100], numero_serie=str(row[3]), estado_actual="PENDIENTE_CLASIFICAR", origen="AMAZON", camion=2)
         db.add(item)
         items.append(item)
-        qr = qrcode.make(f"{request.base_url}item/{id_gen}")
-        qr.save(f"app/static/{id_gen}.png")
     db.commit()
     return templates.TemplateResponse(request=request, name="etiquetas_lote.html", context={"request": request, "items": items})
 
