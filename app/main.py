@@ -16,17 +16,38 @@ from .models import Base, Item, Familia, Imagen, HistorialDiagnostico
 SUPABASE_URL = "https://vmwetkguivvuiehchuax.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtd2V0a2d1aXZ2dWllaGNodWF4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjMwNTE1MiwiZXhwIjoyMDg3ODgxMTUyfQ.J1tSVIgoDLOcKD0wj0SFua6UiNJfNH1LAPX3d_DHkPs"
 
-FAMILIAS_PREDEFINIDAS = [
-    "Lavadora", "Frigorífico", "Secadora", "Lavavajillas", "Horno",
-    "Microondas", "Aire acondicionado", "Termo eléctrico", "Vitroceramica",
-    "Placa de Induccion", "Campana extractora", "Arcón frigorífico", "Lavadora-Secadora"
-]
-
 PIEZAS_POR_FAMILIA = {
-    "Lavadora": [{"nombre": "Puerta", "medida": True}, {"nombre": "Motor", "medida": False}, {"nombre": "Placa", "medida": False}],
-    "Frigorífico": [{"nombre": "Placa", "medida": False}, {"nombre": "Bandeja", "medida": True}],
-    "Arcón frigorífico": [{"nombre": "Tapa", "medida": True}, {"nombre": "Motor", "medida": False}],
-    "Lavadora-Secadora": [{"nombre": "Puerta", "medida": True}, {"nombre": "Placa", "medida": False}],
+    "Lavadora": [
+        {"nombre": "Puerta", "medida": True}, {"nombre": "Placa electronica", "medida": False},
+        {"nombre": "Motor", "medida": False}, {"nombre": "Bomba desague", "medida": False},
+        {"nombre": "Resistencia", "medida": False}, {"nombre": "Blocapuertas", "medida": False},
+        {"nombre": "Goma escotilla", "medida": False}, {"nombre": "Cajon detergente", "medida": False},
+        {"nombre": "Presostato", "medida": False}, {"nombre": "Electrovalvula", "medida": False}
+    ],
+    "Frigorífico": [
+        {"nombre": "Placa electronica", "medida": False}, {"nombre": "Compresor", "medida": False},
+        {"nombre": "Bandeja", "medida": True}, {"nombre": "Estante cristal", "medida": True},
+        {"nombre": "Cajon verdura", "medida": True}, {"nombre": "Maneta puerta", "medida": False},
+        {"nombre": "Termostato", "medida": False}, {"nombre": "Ventilador", "medida": False},
+        {"nombre": "Sonda temperatura", "medida": False}, {"nombre": "Balcon estante", "medida": True}
+    ],
+    "Secadora": [
+        {"nombre": "Placa electronica", "medida": False}, {"nombre": "Motor", "medida": False},
+        {"nombre": "Resistencia", "medida": False}, {"nombre": "Correa", "medida": False}
+    ],
+    "Lavavajillas": [
+        {"nombre": "Placa electronica", "medida": False}, {"nombre": "Bomba lavado", "medida": False},
+        {"nombre": "Bomba desague", "medida": False}, {"nombre": "Resistencia", "medida": False},
+        {"nombre": "Cesto superior", "medida": True}, {"nombre": "Cesto inferior", "medida": True}
+    ],
+    "Arcón frigorífico": [
+        {"nombre": "Motor-Compresor", "medida": False}, {"nombre": "Termostato", "medida": False},
+        {"nombre": "Tapa", "medida": True}
+    ],
+    "Lavadora-Secadora": [
+        {"nombre": "Puerta", "medida": True}, {"nombre": "Placa electronica", "medida": False},
+        {"nombre": "Motor", "medida": False}
+    ],
 }
 
 app = FastAPI()
@@ -48,10 +69,8 @@ def optimizar_imagen(imagen_bytes):
 
 @app.get("/piezas_por_familia/{nombre_familia}")
 def get_piezas_por_familia(nombre_familia: str):
-    # Devolvemos solo la lista de nombres para que sea mas facil para el JS
     piezas = PIEZAS_POR_FAMILIA.get(nombre_familia, [])
     return [p["nombre"] for p in piezas]
-
 
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request):
@@ -66,6 +85,30 @@ def panel(request: Request, db: Session = Depends(get_db)):
 def nuevo_form(request: Request, db: Session = Depends(get_db)):
     familias = db.query(Familia).all()
     return templates.TemplateResponse(request=request, name="nuevo.html", context={"request": request, "familias": familias})
+
+@app.post("/nuevo")
+async def crear_item_web(request: Request, familia_id: int = Form(...), marca: str = Form(...), modelo: str = Form(...), numero_serie: str = Form(None), estado: str = Form(...), db: Session = Depends(get_db)):
+    prefijos = {1:"LAV", 2:"FRI", 3:"SEC", 4:"LAVV", 11:"ARC", 12:"LSEC"}
+    id_gen = f"{prefijos.get(familia_id, 'ITEM')}-{str(uuid.uuid4())[:4].upper()}"
+    item = Item(id=id_gen, familia_id=familia_id, marca=marca, modelo=modelo, numero_serie=numero_serie, estado_actual=estado, en_stock=True)
+    db.add(item)
+    db.commit()
+    return RedirectResponse(f"/item/{id_gen}", status_code=303)
+
+@app.get("/nueva_pieza", response_class=HTMLResponse)
+def nueva_pieza_form(request: Request, db: Session = Depends(get_db)):
+    familias = db.query(Familia).all()
+    aparatos = db.query(Item).filter(Item.parent_id == None).all()
+    return templates.TemplateResponse(request=request, name="nueva_pieza.html", context={"request": request, "familias": familias, "aparatos": aparatos})
+
+@app.post("/nueva_pieza")
+async def crear_pieza_web(request: Request, parent_id: str = Form(...), nombre_pieza: str = Form(...), estado: str = Form(...), db: Session = Depends(get_db)):
+    parent = db.query(Item).filter(Item.id == parent_id).first()
+    id_pieza = f"PZ-{str(uuid.uuid4())[:6].upper()}"
+    nueva = Item(id=id_pieza, parent_id=parent_id, nombre_pieza=nombre_pieza, familia_id=parent.familia_id, marca=parent.marca, modelo=parent.modelo, estado_actual=estado, en_stock=True)
+    db.add(nueva)
+    db.commit()
+    return RedirectResponse(f"/item/{id_pieza}", status_code=303)
 
 @app.get("/stock_view", response_class=HTMLResponse)
 def stock_view(request: Request, db: Session = Depends(get_db)):
@@ -96,17 +139,15 @@ async def subir_imagen(item_id: str, files: List[UploadFile] = File(...), db: Se
         url = f"{SUPABASE_URL}/storage/v1/object/imagenes/{filename}"
         headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": "image/jpeg"}
         requests.put(url, headers=headers, data=comprimido)
-        img_db = Imagen(item_id=item_id, url=f"{SUPABASE_URL}/storage/v1/object/public/imagenes/{filename}", orden=fotos_existentes+1)
-        db.add(img_db)
+        db.add(Imagen(item_id=item_id, url=f"{SUPABASE_URL}/storage/v1/object/public/imagenes/{filename}", orden=fotos_existentes+1))
         db.commit()
         fotos_existentes += 1
     return RedirectResponse(f"/item/{item_id}", status_code=303)
 
 @app.post("/actualizar_diagnostico/{item_id}")
 def actualizar_diagnostico(item_id: str, diagnostico: str = Form(...), db: Session = Depends(get_db)):
-    item = db.query(Item).filter(Item.id == item_id).first()
     db.add(HistorialDiagnostico(item_id=item_id, diagnostico=diagnostico))
-    item.diagnostico_inicial = diagnostico
+    db.query(Item).filter(Item.id == item_id).update({"diagnostico_inicial": diagnostico})
     db.commit()
     return RedirectResponse(f"/item/{item_id}", status_code=303)
 
@@ -147,6 +188,40 @@ def etiqueta_aparato(item_id: str, request: Request, db: Session = Depends(get_d
 def etiqueta_pieza(item_id: str, request: Request, db: Session = Depends(get_db)):
     pieza = db.query(Item).filter(Item.id == item_id).first()
     return templates.TemplateResponse(request=request, name="etiqueta_pieza.html", context={"request": request, "pieza": pieza})
+
+@app.post("/importar_amazon")
+async def procesar_amazon(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    contents = await file.read()
+    wb = openpyxl.load_workbook(io.BytesIO(contents), data_only=True)
+    sheet = wb.active
+    mapa = {'lavadora secadora': 12, 'lavadora': 1, 'frigo': 2, 'secadora': 3, 'lavav': 4, 'horno': 5, 'arcon': 11}
+    prefijos = {1:"LAV", 2:"FRI", 3:"SEC", 4:"LAVV", 5:"HOR", 11:"ARC", 12:"LSEC"}
+    headers = [str(cell.value).upper() for cell in sheet[1]]
+    idx_tipo = headers.index('TIPO') if 'TIPO' in headers else -1
+    items = []
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        if not row[2]: continue
+        fid = None
+        if idx_tipo != -1 and row[idx_tipo]:
+            val_tipo = str(row[idx_tipo]).lower()
+            if 'lavasecadora' in val_tipo or ('lavadora' in val_tipo and 'secadora' in val_tipo): fid = 12
+            elif 'lavadora' in val_tipo: fid = 1
+            elif 'secadora' in val_tipo: fid = 3
+            elif 'frigo' in val_tipo or 'combi' in val_tipo or 'vinoteca' in val_tipo: fid = 2
+            elif 'lavav' in val_tipo: fid = 4
+            elif 'horno' in val_tipo: fid = 5
+            elif 'arcon' in val_tipo or 'congelador' in val_tipo: fid = 11
+        if fid is None:
+            desc = str(row[2]).lower()
+            fid = next((v for k,v in mapa.items() if k in desc), None)
+        id_gen = f"{prefijos.get(fid, 'AMZ')}-{str(uuid.uuid4())[:4].upper()}"
+        item = Item(id=id_gen, familia_id=fid, nombre_pieza=str(row[2])[:100], numero_serie=str(row[3]), estado_actual="PENDIENTE_CLASIFICAR", origen="AMAZON", camion=2)
+        db.add(item)
+        items.append(item)
+        qr = qrcode.make(f"{request.base_url}item/{id_gen}")
+        qr.save(f"app/static/{id_gen}.png")
+    db.commit()
+    return templates.TemplateResponse(request=request, name="etiquetas_lote.html", context={"request": request, "items": items})
 
 @app.get("/procesar_camion_2")
 async def procesar_camion_2(request: Request, db: Session = Depends(get_db)):
