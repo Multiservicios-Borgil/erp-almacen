@@ -29,16 +29,16 @@ PIEZAS_POR_FAMILIA = {
     "Lavadora-Secadora": [{"nombre": "Puerta", "medida": True}, {"nombre": "Placa", "medida": False}],
 }
 
+app = FastAPI()
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+templates = Jinja2Templates(directory="app/templates")
+
 @app.get("/piezas_por_familia/{familia_id}")
 def get_piezas_por_familia(familia_id: int, db: Session = Depends(get_db)):
     familia = db.query(Familia).filter(Familia.id == familia_id).first()
     if not familia: return []
     return PIEZAS_POR_FAMILIA.get(familia.nombre, [])
 
-
-app = FastAPI()
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-templates = Jinja2Templates(directory="app/templates")
 
 def get_db():
     db = SessionLocal()
