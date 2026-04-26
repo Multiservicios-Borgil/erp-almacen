@@ -8,5 +8,4 @@ qrcode
 pillow
 requests
 python-dotenv
-pandas
 openpyxl
