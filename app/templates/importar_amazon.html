@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Cargar Camión Amazon{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <h2 style="color: #333; border-bottom: 2px solid #ff9900; padding-bottom: 10px;">🚚 Cargar Camión Amazon</h2>
+    <p style="color: #666; margin-bottom: 25px;">Selecciona el archivo Excel (.xlsx) que te ha enviado Amazon para registrar todos los productos automáticamente.</p>
+
+    <form method="post" action="/importar_amazon" enctype="multipart/form-data">
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label style="display: block; font-weight: bold; margin-bottom: 8px;">Archivo Excel de Amazon:</label>
+            <input type="file" name="file" accept=".xlsx" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px;">
+        </div>
+
+        <button type="submit" style="width: 100%; padding: 15px; background: #ff9900; color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background 0.3s; box-shadow: 0 4px #cc7a00;">
+            🚀 Subir y Generar Etiquetas
+        </button>
+    </form>
+    
+    <div style="margin-top: 20px; font-size: 14px; color: #888;">
+        <p><b>Nota:</b> El sistema detectará automáticamente si son Lavadoras, Frigoríficos o el nuevo "Arcón Frigorífico" basándose en la descripción.</p>
+    </div>
+</div>
+{% endblock %}

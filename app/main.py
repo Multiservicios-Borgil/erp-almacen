@@ -40,6 +40,8 @@ FAMILIAS_PREDEFINIDAS = [
     "Vitroceramica",
     "Placa de Induccion",
     "Campana extractora",
+    "Arcón frigorífico",
+    "Lavadora-Secadora",
 ]
 PIEZAS_POR_FAMILIA = {
     "Lavadora": [
@@ -110,6 +112,23 @@ PIEZAS_POR_FAMILIA = {
         {"nombre": "Placa", "medida": False},
         {"nombre": "Placa termostato", "medida": False},
         {"nombre": "Termostato", "medida": False},
+    ],
+    "Arcón frigorífico": [
+        {"nombre": "Motor-Compresor", "medida": False},
+        {"nombre": "Termostato", "medida": False},
+        {"nombre": "Tapa", "medida": True},
+        {"nombre": "Bisagra", "medida": False},
+        {"nombre": "Cesta interior", "medida": True},
+        {"nombre": "Asa / Tirador", "medida": False},
+    ],
+    "Lavadora-Secadora": [
+        {"nombre": "Puerta / Escotilla", "medida": True},
+        {"nombre": "Placa electronica", "medida": False},
+        {"nombre": "Motor", "medida": False},
+        {"nombre": "Bomba desague", "medida": False},
+        {"nombre": "Resistencia secado", "medida": False},
+        {"nombre": "Ventilador secado", "medida": False},
+        {"nombre": "Blocapuertas", "medida": False},
     ],
 }
 
@@ -400,6 +419,8 @@ def crear_item_web(
         8: "TER",
         9: "VIT",
         10: "CAM",
+        11: "ARC",
+        12: "LSEC",
     }
     prefijo = prefijos.get(familia_id, "ART")
 
@@ -1282,3 +1303,91 @@ async def auth_middleware(request: Request, call_next):
 
 
     return await call_next(request)
+
+
+# ---------------- IMPORTAR AMAZON ----------------
+import pandas as pd
+import io
+
+
+@app.get("/importar_amazon", response_class=HTMLResponse)
+def importar_amazon_form(request: Request):
+    return templates.TemplateResponse("importar_amazon.html", {"request": request})
+
+
+@app.post("/importar_amazon")
+async def procesar_amazon(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    # 1. Leer Excel
+    contents = await file.read()
+    df = pd.read_excel(io.BytesIO(contents))
+    
+    # 2. Mapeo de familias por palabras clave (IMPORTANTE ORDEN)
+    mapa_familias = {
+        "lavadora secadora": 12,
+        "lavasecadora": 12,
+        "lavadora": 1,
+        "secadora": 3,
+        "frigorifico": 2,
+        "frigo": 2,
+        "vinoteca": 2,
+        "vino": 2,
+        "lavavajillas": 4,
+        "horno": 5,
+        "microondas": 6,
+        "aire": 7,
+        "termo": 8,
+        "vitro": 9,
+        "campana": 10,
+        "arcon": 11,
+        "congelador": 11
+    }
+    
+    prefijos = {1: "LAV", 2: "FRI", 3: "SEC", 4: "LAVV", 5: "HOR", 6: "MIC", 7: "AIRE", 8: "TER", 9: "VIT", 10: "CAM", 11: "ARC"}
+
+    items_creados = []
+    
+    for _, row in df.iterrows():
+        desc = str(row['ItemDesc']).lower()
+        familia_id = None
+        
+        # Detectar familia
+        for clave, fid in mapa_familias.items():
+            if clave in desc:
+                familia_id = fid
+                break
+        
+        # Si no detecta familia, usamos AMZ
+        prefijo = prefijos.get(familia_id, "AMZ")
+        nuevo_id = f"{prefijo}-{str(uuid.uuid4())[:4].upper()}"
+        
+        item = Item(
+            id=nuevo_id,
+            familia_id=familia_id,
+            marca=None, 
+            modelo=None,
+            nombre_pieza=str(row['ItemDesc'])[:100], 
+            numero_serie=str(row['ASIN']),
+            estado_actual="PENDIENTE_CLASIFICAR",
+            origen="AMAZON_TRUCK",
+            en_stock=True
+        )
+        
+        db.add(item)
+        items_creados.append(item)
+        
+        # Generar QR
+        url = f"{request.base_url}item/{nuevo_id}"
+        qr = qrcode.make(url)
+        os.makedirs("app/static", exist_ok=True)
+        qr.save(f"app/static/{nuevo_id}.png")
+
+    db.commit()
+    
+    return templates.TemplateResponse(
+        "etiquetas_lote.html", 
+        {"request": request, "items": items_creados}
+    )

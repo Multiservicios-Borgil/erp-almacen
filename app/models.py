@@ -87,6 +87,7 @@ class Item(Base):
 
     estado_actual = Column(String, default="REGISTRADO")
     en_stock = Column(Boolean, default=True)
+    camion = Column(Integer, default=1)
 
     origen = Column(String)
     motivo_retirada = Column(Text)
