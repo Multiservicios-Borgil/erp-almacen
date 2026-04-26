@@ -97,10 +97,10 @@ async def procesar_amazon(request: Request, file: UploadFile = File(...), db: Se
             if 'lavasecadora' in val_tipo or ('lavadora' in val_tipo and 'secadora' in val_tipo): fid = 12
             elif 'lavadora' in val_tipo: fid = 1
             elif 'secadora' in val_tipo: fid = 3
-            elif 'frigo' in val_tipo or 'combi' in val_tipo: fid = 2
+            elif 'frigo' in val_tipo or 'combi' in val_tipo or 'vinoteca' in val_tipo: fid = 2
             elif 'lavav' in val_tipo: fid = 4
             elif 'horno' in val_tipo: fid = 5
-            elif 'arcon' in val_tipo: fid = 11
+            elif 'arcon' in val_tipo or 'congelador' in val_tipo: fid = 11
         
         if fid is None:
             desc = str(row[2]).lower()
@@ -139,10 +139,10 @@ async def procesar_camion_2(request: Request, db: Session = Depends(get_db)):
             if 'lavasecadora' in val_tipo or ('lavadora' in val_tipo and 'secadora' in val_tipo): fid = 12
             elif 'lavadora' in val_tipo: fid = 1
             elif 'secadora' in val_tipo: fid = 3
-            elif 'frigo' in val_tipo or 'combi' in val_tipo: fid = 2
+            elif 'frigo' in val_tipo or 'combi' in val_tipo or 'vinoteca' in val_tipo: fid = 2
             elif 'lavav' in val_tipo: fid = 4
             elif 'horno' in val_tipo: fid = 5
-            elif 'arcon' in val_tipo: fid = 11
+            elif 'arcon' in val_tipo or 'congelador' in val_tipo: fid = 11
             
         if fid is None:
             desc = str(row[2]).lower()
