@@ -46,11 +46,11 @@ def optimizar_imagen(imagen_bytes):
     img.save(output, format="JPEG", quality=60, optimize=True)
     return output.getvalue()
 
-@app.get("/piezas_por_familia/{familia_id}")
-def get_piezas_por_familia(familia_id: int, db: Session = Depends(get_db)):
-    familia = db.query(Familia).filter(Familia.id == familia_id).first()
-    if not familia: return []
-    return PIEZAS_POR_FAMILIA.get(familia.nombre, [])
+@app.get("/piezas_por_familia/{nombre_familia}")
+def get_piezas_por_familia(nombre_familia: str):
+    # Devolvemos solo la lista de nombres para que sea mas facil para el JS
+    piezas = PIEZAS_POR_FAMILIA.get(nombre_familia, [])
+    return [p["nombre"] for p in piezas]
 
 
 @app.get("/", response_class=HTMLResponse)
