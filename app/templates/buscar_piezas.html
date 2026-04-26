@@ -70,10 +70,10 @@ document.getElementById("familia").addEventListener("change", function(){
         const select = document.getElementById("pieza")
         select.innerHTML = '<option value="">Seleccionar pieza</option>'
 
-        data.forEach(pieza => {
+        data.forEach(nombre => {
             const option = document.createElement("option")
-            option.value = pieza
-            option.text = pieza
+            option.value = nombre
+            option.text = nombre
             select.appendChild(option)
         })
     })
