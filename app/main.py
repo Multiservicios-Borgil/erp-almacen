@@ -33,13 +33,6 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
-@app.get("/piezas_por_familia/{familia_id}")
-def get_piezas_por_familia(familia_id: int, db: Session = Depends(get_db)):
-    familia = db.query(Familia).filter(Familia.id == familia_id).first()
-    if not familia: return []
-    return PIEZAS_POR_FAMILIA.get(familia.nombre, [])
-
-
 def get_db():
     db = SessionLocal()
     try: yield db
@@ -52,6 +45,13 @@ def optimizar_imagen(imagen_bytes):
     output = io.BytesIO()
     img.save(output, format="JPEG", quality=60, optimize=True)
     return output.getvalue()
+
+@app.get("/piezas_por_familia/{familia_id}")
+def get_piezas_por_familia(familia_id: int, db: Session = Depends(get_db)):
+    familia = db.query(Familia).filter(Familia.id == familia_id).first()
+    if not familia: return []
+    return PIEZAS_POR_FAMILIA.get(familia.nombre, [])
+
 
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request):
