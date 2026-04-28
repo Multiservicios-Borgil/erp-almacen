@@ -152,17 +152,19 @@ def actualizar_diagnostico(item_id: str, diagnostico: str = Form(...), db: Sessi
     return RedirectResponse(f"/item/{item_id}", status_code=303)
 
 @app.get("/buscar_aparatos", response_class=HTMLResponse)
-def buscar_aparatos(request: Request, q: str = "", familia_id: int = None, estado: str = "", db: Session = Depends(get_db)):
+def buscar_aparatos(request: Request, q: str = "", familia_id: int = None, estado: str = "", en_wallapop: str = "", db: Session = Depends(get_db)):
     query = db.query(Item).filter(Item.parent_id == None)
     if q: query = query.filter(or_(Item.id.ilike(f"%{q}%"), Item.marca.ilike(f"%{q}%"), Item.modelo.ilike(f"%{q}%")))
     if familia_id: query = query.filter(Item.familia_id == familia_id)
     if estado: query = query.filter(Item.estado_actual == estado)
+    if en_wallapop == "si": query = query.filter(Item.en_wallapop == True)
+    if en_wallapop == "no": query = query.filter(Item.en_wallapop == False)
     aparatos = query.all()
     familias = db.query(Familia).all()
     return templates.TemplateResponse(request=request, name="buscar_aparatos.html", context={"request": request, "aparatos": aparatos, "familias": familias})
 
 @app.get("/buscar_piezas", response_class=HTMLResponse)
-def buscar_piezas(request: Request, q: str = "", familia: str = "", marca: str = "", modelo: str = "", nombre_pieza: str = "", db: Session = Depends(get_db)):
+def buscar_piezas(request: Request, q: str = "", familia: str = "", marca: str = "", modelo: str = "", nombre_pieza: str = "", en_wallapop: str = "", db: Session = Depends(get_db)):
     query = db.query(Item).filter(Item.nombre_pieza != None)
     
     if q: query = query.filter(or_(Item.id.ilike(f"%{q}%"), Item.marca.ilike(f"%{q}%"), Item.modelo.ilike(f"%{q}%"), Item.nombre_pieza.ilike(f"%{q}%")))
@@ -174,6 +176,8 @@ def buscar_piezas(request: Request, q: str = "", familia: str = "", marca: str =
     if marca: query = query.filter(Item.marca.ilike(f"%{marca}%"))
     if modelo: query = query.filter(Item.modelo.ilike(f"%{modelo}%"))
     if nombre_pieza: query = query.filter(Item.nombre_pieza.ilike(f"%{nombre_pieza}%"))
+    if en_wallapop == "si": query = query.filter(Item.en_wallapop == True)
+    if en_wallapop == "no": query = query.filter(Item.en_wallapop == False)
     
     piezas = query.all()
     return templates.TemplateResponse(request=request, name="buscar_piezas.html", context={"request": request, "piezas": piezas})
@@ -280,6 +284,61 @@ def login(username: str = Form(...), password: str = Form(...)):
         res.set_cookie(key="auth", value="ok", httponly=True)
         return res
     return HTMLResponse("Login incorrecto")
+
+@app.post("/toggle_wallapop/{item_id}")
+def toggle_wallapop(item_id: str, db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    if not item: return HTMLResponse("<h2>Item no encontrado</h2>")
+    item.en_wallapop = not item.en_wallapop
+    db.commit()
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+@app.post("/cambiar_estado_web/{item_id}")
+def cambiar_estado_web(item_id: str, nuevo_estado: str = Form(...), db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    if not item: return HTMLResponse("<h2>Item no encontrado</h2>")
+    item.estado_actual = nuevo_estado
+    db.commit()
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+@app.get("/vender/{item_id}", response_class=HTMLResponse)
+def vender_form(item_id: str, request: Request, db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    if not item: return HTMLResponse("<h2>Item no encontrado</h2>")
+    return templates.TemplateResponse(request=request, name="vender.html", context={"request": request, "item": item})
+
+@app.post("/vender/{item_id}")
+def procesar_venta(item_id: str, numero_factura: str = Form(None), tipo_venta: str = Form(...), precio: float = Form(...), db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    if not item: return HTMLResponse("<h2>Item no encontrado</h2>")
+    item.estado_actual = "VENDIDO"
+    item.en_stock = False
+    item.numero_factura = numero_factura
+    item.tipo_venta = tipo_venta
+    item.precio_venta = precio
+    item.fecha_venta = datetime.datetime.now()
+    db.commit()
+    return RedirectResponse("/stock_view", status_code=303)
+
+@app.post("/precio/{item_id}")
+def actualizar_precio(item_id: str, precio: float = Form(...), db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    if item:
+        item.precio_venta = precio
+        db.commit()
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+@app.post("/eliminar_item/{item_id}")
+def eliminar_item(item_id: str, password: str = Form(...), db: Session = Depends(get_db)):
+    PASSWORD_ADMIN = "3539"
+    if password != PASSWORD_ADMIN:
+        return HTMLResponse("<h2>Contraseña incorrecta</h2>")
+    item = db.query(Item).filter(Item.id == item_id).first()
+    if item:
+        db.query(Imagen).filter(Imagen.item_id == item_id).delete()
+        db.delete(item)
+        db.commit()
+    return RedirectResponse("/panel", status_code=303)
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
