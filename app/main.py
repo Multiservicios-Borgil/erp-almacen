@@ -101,14 +101,32 @@ def nueva_pieza_form(request: Request, db: Session = Depends(get_db)):
     aparatos = db.query(Item).filter(Item.parent_id == None).all()
     return templates.TemplateResponse(request=request, name="nueva_pieza.html", context={"request": request, "familias": familias, "aparatos": aparatos})
 
-@app.post("/nueva_pieza")
-async def crear_pieza_web(request: Request, parent_id: str = Form(...), nombre_pieza: str = Form(...), estado: str = Form(...), db: Session = Depends(get_db)):
-    parent = db.query(Item).filter(Item.id == parent_id).first()
-    id_pieza = f"PZ-{str(uuid.uuid4())[:6].upper()}"
-    nueva = Item(id=id_pieza, parent_id=parent_id, nombre_pieza=nombre_pieza, familia_id=parent.familia_id, marca=parent.marca, modelo=parent.modelo, estado_actual=estado, en_stock=True)
-    db.add(nueva)
+@app.post("/crear_pieza_directa")
+def crear_pieza_directa(request: Request, familia: str = Form(...), nombre_pieza: str = Form(...), medidas: str = Form(None), modelo: str = Form(None), marca: str = Form(...), db: Session = Depends(get_db)):
+    familia_obj = db.query(Familia).filter(Familia.nombre == familia).first()
+    if not familia_obj: return HTMLResponse("<h2>Familia no encontrada</h2>")
+    nuevo_id = f"PZ-{str(uuid.uuid4())[:6].upper()}"
+    pieza = Item(id=nuevo_id, nombre_pieza=nombre_pieza, medidas=medidas, modelo=modelo, marca=marca, familia_id=familia_obj.id, estado_actual="REGISTRADO", origen="STOCK_ANTIGUO", en_stock=True)
+    db.add(pieza)
     db.commit()
-    return RedirectResponse(f"/item/{id_pieza}", status_code=303)
+    return RedirectResponse(f"/item/{nuevo_id}", status_code=303)
+
+@app.get("/crear_pieza/{item_id}", response_class=HTMLResponse)
+def crear_pieza_form(item_id: str, request: Request):
+    return templates.TemplateResponse(request=request, name="crear_pieza.html", context={"request": request, "parent_id": item_id})
+
+@app.post("/crear_pieza/{item_id}")
+def crear_pieza(request: Request, item_id: str, nombre_pieza: str = Form(...), medidas: str = Form(None), db: Session = Depends(get_db)):
+    padre = db.query(Item).filter(Item.id == item_id).first()
+    if not padre: return HTMLResponse("<h2>Item no encontrado</h2>")
+    nuevo_id = f"PZ-{str(uuid.uuid4())[:6].upper()}"
+    pieza = Item(id=nuevo_id, nombre_pieza=nombre_pieza, medidas=medidas, familia_id=padre.familia_id, estado_actual="REGISTRADO", origen="DESPIECE", parent_id=item_id, en_stock=True)
+    db.add(pieza)
+    db.commit()
+    qr = qrcode.make(f"{request.base_url}item/{nuevo_id}")
+    os.makedirs("app/static", exist_ok=True)
+    qr.save(f"app/static/{nuevo_id}.png")
+    return RedirectResponse(f"/item/{nuevo_id}", status_code=303)
 
 @app.get("/stock_view", response_class=HTMLResponse)
 def stock_view(request: Request, db: Session = Depends(get_db)):
