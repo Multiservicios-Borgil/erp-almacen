@@ -171,7 +171,7 @@ def actualizar_diagnostico(item_id: str, diagnostico: str = Form(...), db: Sessi
 
 @app.get("/buscar_aparatos", response_class=HTMLResponse)
 def buscar_aparatos(request: Request, q: str = "", familia_id: int = None, estado: str = "", en_wallapop: str = "", db: Session = Depends(get_db)):
-    query = db.query(Item).filter(Item.parent_id == None)
+    query = db.query(Item).filter(Item.parent_id == None, Item.en_stock == True)
     if q: query = query.filter(or_(Item.id.ilike(f"%{q}%"), Item.marca.ilike(f"%{q}%"), Item.modelo.ilike(f"%{q}%")))
     if familia_id: query = query.filter(Item.familia_id == familia_id)
     if estado: query = query.filter(Item.estado_actual == estado)
@@ -183,7 +183,7 @@ def buscar_aparatos(request: Request, q: str = "", familia_id: int = None, estad
 
 @app.get("/buscar_piezas", response_class=HTMLResponse)
 def buscar_piezas(request: Request, q: str = "", familia: str = "", marca: str = "", modelo: str = "", nombre_pieza: str = "", en_wallapop: str = "", db: Session = Depends(get_db)):
-    query = db.query(Item).filter(Item.nombre_pieza != None)
+    query = db.query(Item).filter(Item.nombre_pieza != None, Item.en_stock == True)
     
     if q: query = query.filter(or_(Item.id.ilike(f"%{q}%"), Item.marca.ilike(f"%{q}%"), Item.modelo.ilike(f"%{q}%"), Item.nombre_pieza.ilike(f"%{q}%")))
     
@@ -199,6 +199,26 @@ def buscar_piezas(request: Request, q: str = "", familia: str = "", marca: str =
     
     piezas = query.all()
     return templates.TemplateResponse(request=request, name="buscar_piezas.html", context={"request": request, "piezas": piezas})
+
+@app.get("/buscar_vendidos", response_class=HTMLResponse)
+def buscar_vendidos(request: Request, q: str = "", db: Session = Depends(get_db)):
+    query = db.query(Item).filter(Item.en_stock == False)
+    if q: query = query.filter(or_(Item.id.ilike(f"%{q}%"), Item.marca.ilike(f"%{q}%"), Item.modelo.ilike(f"%{q}%"), Item.nombre_pieza.ilike(f"%{q}%"), Item.numero_serie.ilike(f"%{q}%")))
+    items = query.all()
+    return templates.TemplateResponse(request=request, name="buscar_vendidos.html", context={"request": request, "items": items})
+
+@app.post("/revertir_venta/{item_id}")
+def revertir_venta(item_id: str, db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    if not item: return HTMLResponse("<h2>Item no encontrado</h2>")
+    item.en_stock = True
+    item.estado_actual = "REGISTRADO" # O el estado que desees al volver
+    item.fecha_venta = None
+    item.precio_venta = None
+    item.tipo_venta = None
+    item.numero_factura = None
+    db.commit()
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
 
 @app.get("/qr/{item_id}")
 def generar_qr(item_id: str, request: Request):
