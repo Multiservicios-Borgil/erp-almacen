@@ -35,24 +35,36 @@
     </select>
 
     <label>Número de Serie</label>
-    <input type="text" name="numero_serie" required>
+    <input type="text" name="numero_serie">
+    
     <label>Marca</label>
-    <input type="text" name="marca" style="width:100%;padding:10px;">	
+    <input type="text" name="marca" required>
+    
     <label>Modelo</label>
-    <input type="text" name="modelo">
+    <input type="text" name="modelo" required>
 
     <label>Origen</label>
     <select name="origen">
         <option value="COMPRA">Compra</option>
+        <option value="AMAZON">Amazon</option>
         <option value="RETIRADO_VIVIENDA">Retirado vivienda</option>
-    <label>Precio compra</label>
-    <input type="number" step="0.01" name="precio_compra">
-
-    <label>Nº albarán</label>
-    <input type="text" name="numero_albaran">
     </select>
 
-    <button type="submit">Crear</button>
+    <label>Estado Inicial</label>
+    <select name="estado">
+        <option value="REGISTRADO">Registrado (Sin clasificar)</option>
+        <option value="NUEVO A ESTRENAR">Nuevo a estrenar</option>
+        <option value="NUEVO GRADO A">Nuevo Grado A</option>
+        <option value="NUEVO GRADO B">Nuevo Grado B</option>
+        <option value="NUEVO GRADO C">Nuevo Grado C</option>
+        <option value="REACONDICIONADO">Reacondicionado</option>
+        <option value="SEGUNDA MANO">Segunda Mano</option>
+    </select>
+
+    <label>Diagnóstico inicial</label>
+    <textarea name="diagnostico_inicial" rows="3" style="width:100%; padding:10px;"></textarea>
+
+    <button type="submit">Crear Electrodoméstico</button>
 </form>
 
 </body>
