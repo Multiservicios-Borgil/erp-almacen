@@ -319,7 +319,7 @@ def login_form(request: Request):
 def login(username: str = Form(...), password: str = Form(...)):
     if username == "admin" and password == "1234":
         res = RedirectResponse("/panel", status_code=303)
-        res.set_cookie(key="auth", value="ok", httponly=True)
+        res.set_cookie(key="auth", value="ok", max_age=2592000, httponly=True)
         return res
     return HTMLResponse("Login incorrecto")
 
