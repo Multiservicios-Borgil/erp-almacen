@@ -86,7 +86,7 @@ def nuevo_form(request: Request, db: Session = Depends(get_db)):
     familias = db.query(Familia).all()
     return templates.TemplateResponse(request=request, name="nuevo.html", context={"request": request, "familias": familias})
 
-@app.post("/nuevo")
+@app.post("/crear_item_web")
 async def crear_item_web(request: Request, familia_id: int = Form(...), marca: str = Form(...), modelo: str = Form(...), numero_serie: str = Form(None), estado: str = Form(...), db: Session = Depends(get_db)):
     prefijos = {1:"LAV", 2:"FRI", 3:"SEC", 4:"LAVV", 11:"ARC", 12:"LSEC"}
     id_gen = f"{prefijos.get(familia_id, 'ITEM')}-{str(uuid.uuid4())[:4].upper()}"
