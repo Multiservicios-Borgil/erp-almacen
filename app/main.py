@@ -18,11 +18,18 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 PIEZAS_POR_FAMILIA = {
     "Lavadora": [
-        {"nombre": "Puerta", "medida": True}, {"nombre": "Placa electronica", "medida": False},
-        {"nombre": "Motor", "medida": False}, {"nombre": "Bomba desague", "medida": False},
-        {"nombre": "Resistencia", "medida": False}, {"nombre": "Blocapuertas", "medida": False},
-        {"nombre": "Goma escotilla", "medida": False}, {"nombre": "Cajon detergente", "medida": False},
-        {"nombre": "Presostato", "medida": False}, {"nombre": "Electrovalvula", "medida": False}
+        {"nombre": "Puerta", "medida": True},
+        {"nombre": "Tapa superior", "medida": True},
+        {"nombre": "Electroválvula", "medida": False},
+        {"nombre": "Presostato", "medida": False},
+        {"nombre": "Cajón detergente", "medida": False},
+        {"nombre": "Placa electrónica", "medida": False},
+        {"nombre": "Botonera", "medida": False},
+        {"nombre": "Bomba desagüe", "medida": False},
+        {"nombre": "Resistencia", "medida": False},
+        {"nombre": "Motor", "medida": False},
+        {"nombre": "Blocapuertas", "medida": False},
+        {"nombre": "Goma escotilla", "medida": False}
     ],
     "Frigorífico": [
         {"nombre": "Placa electronica", "medida": False}, {"nombre": "Compresor", "medida": False},
@@ -36,9 +43,31 @@ PIEZAS_POR_FAMILIA = {
         {"nombre": "Resistencia", "medida": False}, {"nombre": "Correa", "medida": False}
     ],
     "Lavavajillas": [
-        {"nombre": "Placa electronica", "medida": False}, {"nombre": "Bomba lavado", "medida": False},
-        {"nombre": "Bomba desague", "medida": False}, {"nombre": "Resistencia", "medida": False},
-        {"nombre": "Cesto superior", "medida": True}, {"nombre": "Cesto inferior", "medida": True}
+        {"nombre": "Cesta superior", "medida": True},
+        {"nombre": "Cesta inferior", "medida": True},
+        {"nombre": "Blocapuertas", "medida": False},
+        {"nombre": "Botonera", "medida": False},
+        {"nombre": "Placa electrónica", "medida": False},
+        {"nombre": "Bomba desagüe", "medida": False},
+        {"nombre": "Motor", "medida": False},
+        {"nombre": "Resistencia", "medida": False},
+        {"nombre": "Jabonera", "medida": False},
+        {"nombre": "Tapa superior", "medida": True},
+        {"nombre": "Aquastop", "medida": False},
+        {"nombre": "Bomba lavado", "medida": False}
+    ],
+    "Horno": [
+        {"nombre": "Resistencia superior", "medida": False},
+        {"nombre": "Resistencia inferior", "medida": False},
+        {"nombre": "Ventilador superior", "medida": False},
+        {"nombre": "Ventilador inferior", "medida": False},
+        {"nombre": "Puerta", "medida": True},
+        {"nombre": "Manillera", "medida": False},
+        {"nombre": "Selector", "medida": False},
+        {"nombre": "Selector temperatura", "medida": False},
+        {"nombre": "Placa", "medida": False},
+        {"nombre": "Placa termostato", "medida": False},
+        {"nombre": "Termostato", "medida": False}
     ],
     "Arcón frigorífico": [
         {"nombre": "Motor-Compresor", "medida": False}, {"nombre": "Termostato", "medida": False},
@@ -370,7 +399,7 @@ def actualizar_precio(item_id: str, precio: float = Form(...), db: Session = Dep
 def eliminar_item(item_id: str, password: str = Form(...), db: Session = Depends(get_db)):
     PASSWORD_ADMIN = "3539"
     if password != PASSWORD_ADMIN:
-        return HTMLResponse("<h2>Contraseña incorrecta</h2>")
+        return HTMLResponse("<h2>ContraseÃ±a incorrecta</h2>")
     item = db.query(Item).filter(Item.id == item_id).first()
     if item:
         db.query(Imagen).filter(Imagen.item_id == item_id).delete()
