@@ -407,6 +407,199 @@ def eliminar_item(item_id: str, password: str = Form(...), db: Session = Depends
         db.commit()
     return RedirectResponse("/panel", status_code=303)
 
+
+# --- COMPATIBILIDAD ---
+MARCAS_CONOCIDAS = ["Bosch", "Siemens", "Balay", "Neff", "Constructa", "Fagor", "Edesa", "Aspes",
+    "LG", "Samsung", "Whirlpool", "Beko", "Indesit", "Ariston", "Candy", "Hoover", "Zanussi",
+    "Electrolux", "AEG", "Miele", "Teka", "Corbero", "Otsein", "Haier", "Hisense",
+    "Brandt", "Pitsos", "Blaupunkt", "Gaggenau", "Thermador", "Junkers", "Lynx",
+    "Cata", "Nodor", "Smeg", "Liebherr", "Gorenje", "ATAG", "Kenmore"]
+
+TIPOS_ELECTRO = {
+    "lavadora": ["Lavadora"], "washing": ["Lavadora"],
+    "lavavajillas": ["Lavavajillas"], "dishwasher": ["Lavavajillas"],
+    "secadora": ["Secadora"], "dryer": ["Secadora"],
+    "frigorifico": ["Frigorífico"], "fridge": ["Frigorífico"], "refrigerador": ["Frigorífico"],
+    "horno": ["Horno"], "oven": ["Horno"],
+    "microondas": ["Microondas"],
+    "campana": ["Campana extractora"],
+    "vitroceramica": ["Vitroceramica", "Placa de Induccion"],
+    "induccion": ["Placa de Induccion"],
+}
+
+TIPOS_PIEZA = {
+    "bomba desague": "Bomba desagüe", "bomba de drenaje": "Bomba desagüe", "drain pump": "Bomba desagüe",
+    "bomba desag": "Bomba desagüe",
+    "resistencia": "Resistencia", "heating element": "Resistencia",
+    "motor": "Motor",
+    "placa electronica": "Placa electrónica", "placa electr": "Placa electrónica", "pcb": "Placa electrónica",
+    "modulo electronico": "Placa electrónica", "control board": "Placa electrónica",
+    "blocapuertas": "Blocapuertas", "door lock": "Blocapuertas", "cierre puerta": "Blocapuertas",
+    "electrovalvula": "Electroválvula", "electrov": "Electroválvula", "inlet valve": "Electroválvula",
+    "presostato": "Presostato", "pressure switch": "Presostato",
+    "puerta": "Puerta", "door": "Puerta",
+    "goma escotilla": "Goma escotilla", "junta puerta": "Goma escotilla", "door seal": "Goma escotilla",
+    "junta": "Goma escotilla",
+    "bomba lavado": "Bomba lavado", "wash pump": "Bomba lavado", "bomba de lavado": "Bomba lavado",
+    "cesta superior": "Cesta superior", "cesto superior": "Cesta superior", "upper basket": "Cesta superior",
+    "cesta inferior": "Cesta inferior", "cesto inferior": "Cesta inferior", "lower basket": "Cesta inferior",
+    "termostato": "Termostato", "thermostat": "Termostato",
+    "ventilador": "Ventilador", "fan": "Ventilador",
+    "compresor": "Compresor", "compressor": "Compresor",
+    "cajon detergente": "Cajón detergente", "detergent drawer": "Cajón detergente",
+    "bandeja": "Bandeja", "tray": "Bandeja",
+    "estante": "Estante cristal", "shelf": "Estante cristal",
+    "botonera": "Botonera", "button panel": "Botonera",
+    "jabonera": "Jabonera", "soap dispenser": "Jabonera",
+    "aquastop": "Aquastop",
+    "correa": "Correa", "belt": "Correa",
+    "maneta": "Maneta puerta", "handle": "Maneta puerta",
+    "sonda": "Sonda temperatura", "sensor": "Sonda temperatura",
+    "tapa superior": "Tapa superior", "top cover": "Tapa superior",
+    "selector": "Selector",
+    "manillera": "Manillera",
+}
+
+def buscar_compatibilidad_web(codigo):
+    """Busca un código de pieza en la web usando Serper.dev (Google Search API)."""
+    import os, json as json_mod
+    api_key = os.getenv("SERPER_API_KEY", "")
+    if not api_key:
+        return None, "No se ha configurado la API key de Serper. Regístrate gratis en serper.dev y añade SERPER_API_KEY al archivo .env"
+    
+    try:
+        headers = {
+            "X-API-KEY": api_key,
+            "Content-Type": "application/json"
+        }
+        payload = json_mod.dumps({
+            "q": f'"{codigo}" recambio electrodoméstico compatible',
+            "gl": "es",
+            "hl": "es",
+            "num": 8
+        })
+        r = requests.post("https://google.serper.dev/search", headers=headers, data=payload, timeout=15)
+        
+        if r.status_code == 401:
+            return None, "API key de Serper inválida. Verifica tu SERPER_API_KEY en .env"
+        if r.status_code == 429:
+            return None, "Se ha superado el límite de búsquedas. Inténtalo más tarde."
+        if r.status_code != 200:
+            return None, f"Error en la búsqueda web (código {r.status_code})"
+        
+        data = r.json()
+        results = data.get("organic", [])
+        
+        if not results:
+            return None, f"No se encontraron resultados para el código '{codigo}'"
+        
+        # Extraer info de los snippets
+        info = {"codigo_original": codigo, "tipo_pieza": None, "tipo_electrodomestico": None, "marcas": set()}
+        web_results = []
+        
+        all_text = ""
+        for result in results:
+            title = result.get("title", "")
+            snippet = result.get("snippet", "")
+            url = result.get("link", "")
+            all_text += f" {title} {snippet} "
+            web_results.append({"title": title, "snippet": snippet, "url": url})
+        
+        all_text_lower = all_text.lower()
+        
+        # Detectar tipo de pieza
+        for keyword, pieza_name in TIPOS_PIEZA.items():
+            if keyword in all_text_lower:
+                info["tipo_pieza"] = pieza_name
+                break
+        
+        # Detectar tipo de electrodoméstico
+        for keyword, electro_names in TIPOS_ELECTRO.items():
+            if keyword in all_text_lower:
+                info["tipo_electrodomestico"] = electro_names[0]
+                break
+        
+        # Detectar marcas
+        for marca in MARCAS_CONOCIDAS:
+            if marca.lower() in all_text_lower:
+                info["marcas"].add(marca)
+        
+        info["marcas"] = sorted(list(info["marcas"]))
+        
+        return {"info": info, "web_results": web_results}, None
+        
+    except requests.exceptions.Timeout:
+        return None, "La búsqueda web tardó demasiado. Inténtalo de nuevo."
+    except Exception as e:
+        return None, f"Error inesperado: {str(e)}"
+
+
+def buscar_piezas_compatibles(db, info_pieza):
+    """Busca en el inventario piezas que puedan ser compatibles."""
+    query = db.query(Item).filter(Item.nombre_pieza != None, Item.en_stock == True)
+    
+    conditions = []
+    
+    # Filtrar por tipo de pieza si lo conocemos
+    if info_pieza.get("tipo_pieza"):
+        conditions.append(Item.nombre_pieza.ilike(f"%{info_pieza['tipo_pieza']}%"))
+    
+    # Filtrar por tipo de electrodoméstico
+    if info_pieza.get("tipo_electrodomestico"):
+        familia = db.query(Familia).filter(Familia.nombre.ilike(f"%{info_pieza['tipo_electrodomestico']}%")).first()
+        if familia:
+            query = query.filter(Item.familia_id == familia.id)
+    
+    # Si tenemos tipo de pieza, filtrar por ella
+    if conditions:
+        query = query.filter(or_(*conditions))
+    
+    # Si tenemos marcas compatibles, priorizar pero no excluir
+    piezas = query.all()
+    
+    # Ordenar: primero las que coinciden en marca
+    marcas_lower = [m.lower() for m in info_pieza.get("marcas", [])]
+    def sort_key(p):
+        marca_match = 0
+        if p.marca and p.marca.lower() in marcas_lower:
+            marca_match = 1
+        return -marca_match
+    
+    piezas.sort(key=sort_key)
+    return piezas
+
+
+@app.get("/compatibilidad", response_class=HTMLResponse)
+def compatibilidad_form(request: Request):
+    return templates.TemplateResponse(request=request, name="compatibilidad.html", context={"request": request})
+
+@app.get("/buscar_compatibilidad", response_class=HTMLResponse)
+def buscar_compatibilidad(request: Request, codigo: str = "", db: Session = Depends(get_db)):
+    if not codigo.strip():
+        return templates.TemplateResponse(request=request, name="compatibilidad.html", 
+            context={"request": request, "error": "Introduce un código de pieza"})
+    
+    codigo = codigo.strip()
+    resultado, error = buscar_compatibilidad_web(codigo)
+    
+    if error:
+        return templates.TemplateResponse(request=request, name="compatibilidad.html",
+            context={"request": request, "codigo": codigo, "error": error})
+    
+    info_pieza = resultado["info"]
+    web_results = resultado["web_results"]
+    piezas_stock = buscar_piezas_compatibles(db, info_pieza)
+    
+    return templates.TemplateResponse(request=request, name="compatibilidad.html",
+        context={
+            "request": request,
+            "codigo": codigo,
+            "info_pieza": info_pieza,
+            "resultados_web": web_results,
+            "piezas_stock": piezas_stock
+        })
+
+
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
     if any(request.url.path.startswith(r) for r in ["/login", "/static", "/qr", "/imagenes", "/etiqueta"]): return await call_next(request)
