@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Imprimir Etiquetas en Lote</title>
+<style>
+    body {
+        font-family: Arial;
+        text-align: center;
+        background: #f0f0f0;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .no-print {
+        background: #ff9900;
+        color: white;
+        padding: 15px;
+        margin-bottom: 30px;
+        border-radius: 8px;
+        display: inline-block;
+        width: 100%;
+        max-width: 600px;
+    }
+
+    .etiqueta {
+        border: 2px solid black;
+        padding: 20px;
+        width: 300px;
+        background: white;
+        margin: 10px auto;
+        page-break-inside: avoid;
+    }
+
+    .etiqueta h2 {
+        margin: 0 0 10px 0;
+        font-size: 24px;
+    }
+
+    .etiqueta p {
+        margin: 5px 0;
+        font-size: 14px;
+    }
+
+    @media print {
+        body {
+            background: white;
+            padding: 0;
+        }
+        .no-print {
+            display: none;
+        }
+        .etiqueta {
+            margin: 0 auto 1cm auto; /* Espacio entre etiquetas al imprimir */
+            border: 2px solid black;
+            box-shadow: none;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="no-print">
+    <h2 style="margin:0;">🖨️ Impresión de Lote (Amazon Truck)</h2>
+    <p>Se han generado <b>{{ items|length }}</b> etiquetas.</p>
+    <button onclick="window.print()" style="padding:10px 20px; font-size:16px; cursor:pointer;">IMPRIMIR TODO EL LOTE</button>
+    <br><br>
+    <a href="/panel" style="color:white;">Volver al Panel</a>
+</div>
+
+{% for item in items %}
+<div class="etiqueta">
+    <h2>{{ item.id }}</h2>
+    
+    <p><b>Familia:</b> {{ item.familia.nombre if item.familia else "PENDIENTE" }}</p>
+    
+    <p><b>Desc:</b> {{ item.nombre_pieza[:50] }}...</p>
+    
+    <img src="/qr/{{ item.id }}" width="150" style="margin-top:10px;">
+    
+    <div style="font-size: 10px; color: #666; margin-top: 5px;">
+        ASIN: {{ item.numero_serie }}
+    </div>
+</div>
+{% endfor %}
+
+</body>
+</html>

@@ -1,1266 +1,607 @@
-from fastapi import FastAPI, Request, Depends, Form, HTTPException
+from fastapi import FastAPI, Request, Depends, Form, HTTPException, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from fastapi import Header
-from .models import Evento, Venta
-from .models import Base, Item, Familia, HistorialDiagnostico
 from sqlalchemy.orm import Session, aliased
-from sqlalchemy import func
-
-
-import csv
-import io
-import datetime
-import uuid
-import qrcode
-from fastapi.responses import StreamingResponse
-import requests
-
-
+from sqlalchemy import func, or_
+import csv, io, datetime, uuid, qrcode, os, requests, openpyxl
+from typing import List
+from PIL import Image
 from .database import SessionLocal, engine
 from .models import Base, Item, Familia, Imagen, HistorialDiagnostico
-from PIL import Image
-import io
 
-
+# --- CONFIG ---
 SUPABASE_URL = "https://vmwetkguivvuiehchuax.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtd2V0a2d1aXZ2dWllaGNodWF4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjMwNTE1MiwiZXhwIjoyMDg3ODgxMTUyfQ.J1tSVIgoDLOcKD0wj0SFua6UiNJfNH1LAPX3d_DHkPs"
 
-
-FAMILIAS_PREDEFINIDAS = [
-    "Lavadora",
-    "Frigorífico",
-    "Secadora",
-    "Lavavajillas",
-    "Horno",
-    "Microondas",
-    "Aire acondicionado",
-    "Termo eléctrico",
-    "Placa vitrocerámica",
-    "Campana extractora",
-]
 PIEZAS_POR_FAMILIA = {
     "Lavadora": [
         {"nombre": "Puerta", "medida": True},
-        {"nombre": "Placa electronica", "medida": False},
-        {"nombre": "Motor", "medida": False},
-        {"nombre": "Frontal", "medida": False},
-        {"nombre": "Cajetin", "medida": False},
-        {"nombre": "Bomba desague", "medida": False},
-    ],
-    "Lavavajillas": [
+        {"nombre": "Tapa superior", "medida": True},
+        {"nombre": "Electroválvula", "medida": False},
+        {"nombre": "Presostato", "medida": False},
+        {"nombre": "Cajón detergente", "medida": False},
+        {"nombre": "Placa electrónica", "medida": False},
+        {"nombre": "Botonera", "medida": False},
+        {"nombre": "Bomba desagüe", "medida": False},
         {"nombre": "Resistencia", "medida": False},
-        {"nombre": "Bomba", "medida": False},
-        {"nombre": "Resistencia-Bomba", "medida": False},
-        {"nombre": "Cesta Superior", "medida": False},
-        {"nombre": "Cesta Inferior", "medida": False},
-        {"nombre": "Frontal", "medida": False},
-        {"nombre": "Placa Frontal", "medida": False},
-        {"nombre": "Placa Motor", "medida": False},
-        {"nombre": "Tubo aquastop", "medida": False},
+        {"nombre": "Motor", "medida": False},
+        {"nombre": "Blocapuertas", "medida": False},
+        {"nombre": "Goma escotilla", "medida": False}
     ],
     "Frigorífico": [
-        {"nombre": "Placa", "medida": False},
-        {"nombre": "Placa-Motor", "medida": False},
-        {"nombre": "Arrancador", "medida": False},
-        {"nombre": "Bandeja", "medida": True},
-        {"nombre": "Botellero", "medida": False},
-        {"nombre": "Cajon lateral", "medida": False},
-        {"nombre": "Cajon Congelador Superior", "medida": True},
-        {"nombre": "Cajon Congelador Medio", "medida": True},
-        {"nombre": "Cajon Congelador Inferior", "medida": True},
-        {"nombre": "Cajon Izd frigo", "medida": True},
-        {"nombre": "Cajon derecho frigo", "medida": True},
+        {"nombre": "Placa electronica", "medida": False}, {"nombre": "Compresor", "medida": False},
+        {"nombre": "Bandeja", "medida": True}, {"nombre": "Estante cristal", "medida": True},
+        {"nombre": "Cajon verdura", "medida": True}, {"nombre": "Maneta puerta", "medida": False},
+        {"nombre": "Termostato", "medida": False}, {"nombre": "Ventilador", "medida": False},
+        {"nombre": "Sonda temperatura", "medida": False}, {"nombre": "Balcon estante", "medida": True}
     ],
-    "Vitroceramica": [
-        {"nombre": "Resistencia", "medida": True},
-        {"nombre": "Placa", "medida": False},
+    "Secadora": [
+        {"nombre": "Placa electronica", "medida": False}, {"nombre": "Motor", "medida": False},
+        {"nombre": "Resistencia", "medida": False}, {"nombre": "Correa", "medida": False}
     ],
-    "Placa de Induccion": [
-        {"nombre": "Inductores", "medida": True},
-        {"nombre": "Placa", "medida": False},
+    "Lavavajillas": [
+        {"nombre": "Cesta superior", "medida": True},
+        {"nombre": "Cesta inferior", "medida": True},
+        {"nombre": "Blocapuertas", "medida": False},
+        {"nombre": "Botonera", "medida": False},
+        {"nombre": "Placa electrónica", "medida": False},
+        {"nombre": "Bomba desagüe", "medida": False},
+        {"nombre": "Motor", "medida": False},
+        {"nombre": "Resistencia", "medida": False},
+        {"nombre": "Jabonera", "medida": False},
+        {"nombre": "Tapa superior", "medida": True},
+        {"nombre": "Aquastop", "medida": False},
+        {"nombre": "Bomba lavado", "medida": False}
     ],
     "Horno": [
-        {"nombre": "Resistencia Superior", "medida": False},
-        {"nombre": "Resistencia Inferior", "medida": False},
-        {"nombre": "Puerta", "medida": False},
-        {"nombre": "Tirador", "medida": False},
+        {"nombre": "Resistencia superior", "medida": False},
+        {"nombre": "Resistencia inferior", "medida": False},
+        {"nombre": "Ventilador superior", "medida": False},
+        {"nombre": "Ventilador inferior", "medida": False},
+        {"nombre": "Puerta", "medida": True},
+        {"nombre": "Manillera", "medida": False},
         {"nombre": "Selector", "medida": False},
+        {"nombre": "Selector temperatura", "medida": False},
         {"nombre": "Placa", "medida": False},
+        {"nombre": "Placa termostato", "medida": False},
+        {"nombre": "Termostato", "medida": False}
+    ],
+    "Arcón frigorífico": [
+        {"nombre": "Motor-Compresor", "medida": False}, {"nombre": "Termostato", "medida": False},
+        {"nombre": "Tapa", "medida": True}
+    ],
+    "Lavadora-Secadora": [
+        {"nombre": "Puerta", "medida": True}, {"nombre": "Placa electronica", "medida": False},
+        {"nombre": "Motor", "medida": False}
     ],
 }
 
-
-def crear_familias_predeterminadas():
-    db = SessionLocal()
-    try:
-        for nombre in FAMILIAS_PREDEFINIDAS:
-            existe = db.query(Familia).filter(Familia.nombre == nombre).first()
-            if not existe:
-                db.add(Familia(nombre=nombre))
-        db.commit()
-    finally:
-        db.close()
-
-
-crear_familias_predeterminadas()
-
-# ---------------- APP ----------------
-
 app = FastAPI()
-
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
-
-# ---------------- DB ----------------
-
 
 def get_db():
     db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    try: yield db
+    finally: db.close()
 
+def optimizar_imagen(imagen_bytes):
+    img = Image.open(io.BytesIO(imagen_bytes))
+    if img.mode != "RGB": img = img.convert("RGB")
+    img.thumbnail((800, 800))
+    output = io.BytesIO()
+    img.save(output, format="JPEG", quality=60, optimize=True)
+    return output.getvalue()
 
-# ---------------- ROLES ----------------
+@app.get("/piezas_por_familia/{nombre_familia}")
+def get_piezas_por_familia(nombre_familia: str):
+    piezas = PIEZAS_POR_FAMILIA.get(nombre_familia, [])
+    return [p["nombre"] for p in piezas]
 
-
-def verificar_roles_permitidos(*roles_permitidos):
-    def wrapper(x_rol: str = Header()):
-        if x_rol not in roles_permitidos:
-            raise HTTPException(status_code=403, detail="Permiso denegado")
-
-    return wrapper
-
-
-# ---------------- ESTADOS ----------------
-
-TRANSICIONES = {
-    "REGISTRADO": ["FUNCIONA", "ESTROPEADO"],
-    "FUNCIONA": [
-        "VENTA_SEGUNDA_MANO",
-        "VENTA_REACONDICIONADO",
-        "VENTA_NUEVO",
-        "PREPARAR_GOLPEADO_VENTA_NUEVO",
-        "PREPARAR_GOLPEADO_REACONDICIONADO"
-    ],
-    "REPARADO": [
-        "VENTA_SEGUNDA_MANO",
-        "VENTA_REACONDICIONADO",
-        "VENTA_NUEVO",
-        "PREPARAR_GOLPEADO_VENTA_NUEVO",
-        "PREPARAR_GOLPEADO_REACONDICIONADO"
-    ]
-}
-
-# ---------------- CREAR ITEM ----------------
-
-
-class ItemCreate(BaseModel):
-    familia_id: int
-    sku_id: int
-    numero_serie: str
-    proveedor_id: int
-    fecha_compra: str
-    origen: str
-    motivo_retirada: str | None = None
-    diagnostico_inicial: str | None = None
-
-
-@app.post("/crear_item")
-def crear_item(
-    data: ItemCreate,
-    db: Session = Depends(get_db),
-    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN")),
-):
-
-    if data.origen == "RETIRADO_VIVIENDA" and not data.diagnostico_inicial:
-        raise HTTPException(status_code=400, detail="Diagnóstico obligatorio")
-
-    estado_inicial = (
-        "PENDIENTE_DIAGNOSTICO" if data.origen == "RETIRADO_VIVIENDA" else "REGISTRADO"
-    )
-
-    nuevo_id = f"{datetime.datetime.now().year}-{str(uuid.uuid4())[:6]}"
-
-    item = Item(
-        id=nuevo_id,
-        familia_id=data.familia_id,
-        sku_id=data.sku_id,
-        numero_serie=data.numero_serie,
-        proveedor_id=data.proveedor_id,
-        fecha_compra=datetime.datetime.strptime(data.fecha_compra, "%Y-%m-%d"),
-        estado_actual=estado_inicial,
-        origen=data.origen,
-        motivo_retirada=data.motivo_retirada,
-        diagnostico_inicial=data.diagnostico_inicial,
-    )
-
-    db.add(item)
-    db.commit()
-
-    return {"id": nuevo_id}
-
-
-# ---------------- CAMBIAR ESTADO ----------------
-
-
-class EstadoUpdate(BaseModel):
-    item_id: str
-    nuevo_estado: str
-
-
-@app.post("/cambiar_estado")
-def cambiar_estado(
-    data: EstadoUpdate,
-    db: Session = Depends(get_db),
-    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN")),
-):
-
-    item = db.query(Item).filter(Item.id == data.item_id).first()
-
-    if not item:
-        raise HTTPException(status_code=404, detail="Item no encontrado")
-
-    if data.nuevo_estado not in TRANSICIONES.get(item.estado_actual, []):
-        raise HTTPException(status_code=400, detail="Transición no permitida")
-
-    estado_anterior = item.estado_actual
-    item.estado_actual = data.nuevo_estado
-
-    if data.nuevo_estado == "VENDIDO":
-        item.en_stock = False
-
-    evento = Evento(
-        item_id=item.id,
-        estado_anterior=estado_anterior,
-        estado_nuevo=data.nuevo_estado,
-        usuario="sistema",
-    )
-
-    db.add(evento)
-    db.commit()
-
-    return {"mensaje": "Estado actualizado"}
-
-
-# ---------------- REGISTRAR VENTA ----------------
-
-
-class RegistrarVenta(BaseModel):
-    item_id: str
-    tipo_venta_id: int
-    cliente: str
-    precio: float | None = None
-    garantia_meses: int | None = None
-    numero_factura: str | None = None
-
-
-@app.post("/registrar_venta")
-def registrar_venta(
-    data: RegistrarVenta,
-    db: Session = Depends(get_db),
-    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN")),
-):
-
-    item = db.query(Item).filter(Item.id == data.item_id).first()
-
-    if not item or not item.en_stock:
-        raise HTTPException(status_code=400, detail="Item no disponible")
-
-    venta = Venta(
-        item_id=data.item_id,
-        tipo_venta_id=data.tipo_venta_id,
-        cliente=data.cliente,
-        precio=data.precio,
-        garantia_meses=data.garantia_meses,
-        numero_factura=data.numero_factura,
-    )
-
-    item.en_stock = False
-    item.estado_actual = "VENDIDO"
-
-    db.add(venta)
-    db.commit()
-
-    return {"mensaje": "Venta registrada"}
-
-
-# ---------------- STOCK ----------------
-
-
-@app.get("/stock")
-def ver_stock(
-    db: Session = Depends(get_db),
-    permiso: str = Depends(verificar_roles_permitidos("OPERARIO", "ADMIN")),
-):
-    items = db.query(Item).filter(Item.en_stock == True).all()
-    return [{"id": i.id, "estado": i.estado_actual} for i in items]
-
-
-# ---------------- ROOT ----------------
-
-
-@app.get("/")
-def root():
-    return {"mensaje": "ERP Almacen funcionando correctamente"}
-
+@app.get("/", response_class=HTMLResponse)
+def root(request: Request):
+    return RedirectResponse("/panel")
 
 @app.get("/panel", response_class=HTMLResponse)
 def panel(request: Request, db: Session = Depends(get_db)):
     familias = db.query(Familia).all()
-    return templates.TemplateResponse(
-        "panel.html", {"request": request, "familias": familias}
-    )
-
+    return templates.TemplateResponse(request=request, name="panel.html", context={"request": request, "familias": familias})
 
 @app.get("/nuevo", response_class=HTMLResponse)
 def nuevo_form(request: Request, db: Session = Depends(get_db)):
     familias = db.query(Familia).all()
-    return templates.TemplateResponse(
-        "nuevo.html", {"request": request, "familias": familias}
-    )
+    return templates.TemplateResponse(request=request, name="nuevo.html", context={"request": request, "familias": familias})
 
+@app.post("/crear_item_web")
+async def crear_item_web(request: Request, familia_id: int = Form(...), marca: str = Form(...), modelo: str = Form(...), numero_serie: str = Form(None), estado: str = Form(...), db: Session = Depends(get_db)):
+    prefijos = {1:"LAV", 2:"FRI", 3:"SEC", 4:"LAVV", 11:"ARC", 12:"LSEC"}
+    id_gen = f"{prefijos.get(familia_id, 'ITEM')}-{str(uuid.uuid4())[:4].upper()}"
+    item = Item(id=id_gen, familia_id=familia_id, marca=marca, modelo=modelo, numero_serie=numero_serie, estado_actual=estado, en_stock=True)
+    db.add(item)
+    db.commit()
+    return RedirectResponse(f"/item/{id_gen}", status_code=303)
 
-from fastapi import Form
-from fastapi.responses import RedirectResponse
+@app.get("/nueva_pieza", response_class=HTMLResponse)
+def nueva_pieza_form(request: Request, db: Session = Depends(get_db)):
+    familias = db.query(Familia).all()
+    aparatos = db.query(Item).filter(Item.parent_id == None).all()
+    return templates.TemplateResponse(request=request, name="nueva_pieza.html", context={"request": request, "familias": familias, "aparatos": aparatos})
 
+@app.post("/crear_pieza_directa")
+def crear_pieza_directa(request: Request, familia: str = Form(...), nombre_pieza: str = Form(...), medidas: str = Form(None), modelo: str = Form(None), marca: str = Form(...), db: Session = Depends(get_db)):
+    familia_obj = db.query(Familia).filter(Familia.nombre == familia).first()
+    if not familia_obj: return HTMLResponse("<h2>Familia no encontrada</h2>")
+    nuevo_id = f"PZ-{str(uuid.uuid4())[:6].upper()}"
+    pieza = Item(id=nuevo_id, nombre_pieza=nombre_pieza, medidas=medidas, modelo=modelo, marca=marca, familia_id=familia_obj.id, estado_actual="REGISTRADO", origen="STOCK_ANTIGUO", en_stock=True)
+    db.add(pieza)
+    db.commit()
+    return RedirectResponse(f"/item/{nuevo_id}", status_code=303)
+
+@app.get("/crear_pieza/{item_id}", response_class=HTMLResponse)
+def crear_pieza_form(item_id: str, request: Request):
+    return templates.TemplateResponse(request=request, name="crear_pieza.html", context={"request": request, "parent_id": item_id})
+
+@app.post("/crear_pieza/{item_id}")
+def crear_pieza(request: Request, item_id: str, nombre_pieza: str = Form(...), medidas: str = Form(None), db: Session = Depends(get_db)):
+    padre = db.query(Item).filter(Item.id == item_id).first()
+    if not padre: return HTMLResponse("<h2>Item no encontrado</h2>")
+    nuevo_id = f"PZ-{str(uuid.uuid4())[:6].upper()}"
+    pieza = Item(id=nuevo_id, nombre_pieza=nombre_pieza, medidas=medidas, familia_id=padre.familia_id, estado_actual="REGISTRADO", origen="DESPIECE", parent_id=item_id, en_stock=True)
+    db.add(pieza)
+    db.commit()
+    qr = qrcode.make(f"{request.base_url}item/{nuevo_id}")
+    os.makedirs("app/static", exist_ok=True)
+    qr.save(f"app/static/{nuevo_id}.png")
+    return RedirectResponse(f"/item/{nuevo_id}", status_code=303)
 
 @app.get("/stock_view", response_class=HTMLResponse)
 def stock_view(request: Request, db: Session = Depends(get_db)):
-    items_db = db.query(Item).filter(Item.en_stock == True).all()
-
-    items = []
-    for i in items_db:
-        items.append(
-            {
-                "id": i.id,
-                "estado": i.estado_actual,
-                "serie": i.numero_serie,
-                "origen": i.origen,
-                "familia": i.familia.nombre if i.familia else "Sin familia",
-                "marca": i.marca,
-                "nombre_pieza": i.nombre_pieza,
-            }
-        )
-
-    return templates.TemplateResponse(
-        "stock.html", {"request": request, "items": items}
-    )
-
-
-import qrcode
-import os
-
-
-@app.post("/crear_item_web")
-def crear_item_web(
-    request: Request,
-    familia_id: int = Form(...),
-    numero_serie: str = Form(...),
-    marca: str = Form(...),
-    modelo: str = Form(None),
-    origen: str = Form(...),
-    diagnostico_inicial: str = Form(None),
-    db: Session = Depends(get_db),
-):
-
-    # primero crear ID
-    prefijos = {
-        1: "LAV",
-        2: "FRI",
-        3: "SEC",
-        4: "LAVV",
-        5: "HOR",
-        6: "MIC",
-        7: "AIRE",
-        8: "TER",
-        9: "VIT",
-        10: "CAM",
-    }
-    prefijo = prefijos.get(familia_id, "ART")
-
-    nuevo_id = f"{prefijo}-{str(uuid.uuid4())[:4]}"
-
-    # luego crear item
-    item = Item(
-        id=nuevo_id,
-        familia_id=familia_id,
-        numero_serie=numero_serie,
-        marca=marca,
-        modelo=modelo,
-        estado_actual="REGISTRADO",
-        origen=origen,
-        diagnostico_inicial=diagnostico_inicial,
-    )
-
-    db.add(item)
-    db.commit()
-
-    # generar QR
-    url = f"{request.base_url}item/{nuevo_id}"
-
-    qr = qrcode.make(url)
-    qr.save(f"app/static/{nuevo_id}.png")
-
-    return RedirectResponse(f"/item/{nuevo_id}", status_code=303)
-
-
-from fastapi.staticfiles import StaticFiles
-
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-
+    items = db.query(Item).filter(Item.en_stock == True).all()
+    return templates.TemplateResponse(request=request, name="stock.html", context={"request": request, "items": items})
 
 @app.get("/item/{item_id}", response_class=HTMLResponse)
 def ver_item(item_id: str, request: Request, db: Session = Depends(get_db)):
-
     item = db.query(Item).filter(Item.id == item_id).first()
-
+    if not item: return HTMLResponse("Item no encontrado")
     hijos = db.query(Item).filter(Item.parent_id == item_id).all()
+    historial = db.query(HistorialDiagnostico).filter(HistorialDiagnostico.item_id == item_id).order_by(HistorialDiagnostico.fecha.desc()).all()
+    return templates.TemplateResponse(request=request, name="item.html", context={"request": request, "item": item, "hijos": hijos, "historial": historial})
 
-    historial = db.query(HistorialDiagnostico)\
-        .filter(HistorialDiagnostico.item_id == item_id)\
-        .order_by(HistorialDiagnostico.fecha.desc())\
-        .all()
+@app.get("/imagenes/{item_id}", response_class=HTMLResponse)
+def ver_imagenes(item_id: str, request: Request, db: Session = Depends(get_db)):
+    fotos = db.query(Imagen).filter(Imagen.item_id == item_id).order_by(Imagen.orden).all()
+    return templates.TemplateResponse(request=request, name="imagenes.html", context={"request": request, "fotos": fotos, "item_id": item_id})
 
-    return templates.TemplateResponse(
-        "item.html",
-        {
-            "request": request,
-            "item": item,
-            "hijos": hijos,
-            "historial": historial
-        }
-    )
-
-
-@app.post("/cambiar_estado_web/{item_id}")
-def cambiar_estado_web(
-    item_id: str, nuevo_estado: str = Form(...), db: Session = Depends(get_db)
-):
-    item = db.query(Item).filter(Item.id == item_id).first()
-
-    if not item:
-        return HTMLResponse("<h2>Item no encontrado</h2>")
-
-    item.estado_actual = nuevo_estado
-    db.commit()
-
+@app.post("/subir_imagen/{item_id}")
+async def subir_imagen(item_id: str, files: List[UploadFile] = File(...), db: Session = Depends(get_db)):
+    fotos_existentes = db.query(Imagen).filter(Imagen.item_id == item_id).count()
+    for file in files:
+        if fotos_existentes >= 5: break
+        filename = f"{item_id}_{fotos_existentes+1}.jpg"
+        contenido = await file.read()
+        comprimido = optimizar_imagen(contenido)
+        url = f"{SUPABASE_URL}/storage/v1/object/imagenes/{filename}"
+        headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": "image/jpeg"}
+        requests.put(url, headers=headers, data=comprimido)
+        db.add(Imagen(item_id=item_id, url=f"{SUPABASE_URL}/storage/v1/object/public/imagenes/{filename}", orden=fotos_existentes+1))
+        db.commit()
+        fotos_existentes += 1
     return RedirectResponse(f"/item/{item_id}", status_code=303)
 
+@app.post("/actualizar_diagnostico/{item_id}")
+def actualizar_diagnostico(item_id: str, diagnostico: str = Form(...), db: Session = Depends(get_db)):
+    db.add(HistorialDiagnostico(item_id=item_id, diagnostico=diagnostico))
+    db.query(Item).filter(Item.id == item_id).update({"diagnostico_inicial": diagnostico})
+    db.commit()
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
 
-@app.get("/scan", response_class=HTMLResponse)
-def scan_page(request: Request):
-    return templates.TemplateResponse("scan.html", {"request": request})
+@app.get("/buscar_aparatos", response_class=HTMLResponse)
+def buscar_aparatos(request: Request, q: str = "", familia_id: int = None, estado: str = "", en_wallapop: str = "", db: Session = Depends(get_db)):
+    query = db.query(Item).filter(Item.parent_id == None, Item.en_stock == True)
+    if q: query = query.filter(or_(Item.id.ilike(f"%{q}%"), Item.marca.ilike(f"%{q}%"), Item.modelo.ilike(f"%{q}%")))
+    if familia_id: query = query.filter(Item.familia_id == familia_id)
+    if estado: query = query.filter(Item.estado_actual == estado)
+    if en_wallapop == "si": query = query.filter(Item.en_wallapop == True)
+    if en_wallapop == "no": query = query.filter(Item.en_wallapop == False)
+    aparatos = query.all()
+    familias = db.query(Familia).all()
+    return templates.TemplateResponse(request=request, name="buscar_aparatos.html", context={"request": request, "aparatos": aparatos, "familias": familias})
 
+@app.get("/buscar_piezas", response_class=HTMLResponse)
+def buscar_piezas(request: Request, q: str = "", familia: str = "", marca: str = "", modelo: str = "", nombre_pieza: str = "", en_wallapop: str = "", db: Session = Depends(get_db)):
+    query = db.query(Item).filter(Item.nombre_pieza != None, Item.en_stock == True)
+    
+    if q: query = query.filter(or_(Item.id.ilike(f"%{q}%"), Item.marca.ilike(f"%{q}%"), Item.modelo.ilike(f"%{q}%"), Item.nombre_pieza.ilike(f"%{q}%")))
+    
+    if familia:
+        f_obj = db.query(Familia).filter(Familia.nombre == familia).first()
+        if f_obj: query = query.filter(Item.familia_id == f_obj.id)
+        
+    if marca: query = query.filter(Item.marca.ilike(f"%{marca}%"))
+    if modelo: query = query.filter(Item.modelo.ilike(f"%{modelo}%"))
+    if nombre_pieza: query = query.filter(Item.nombre_pieza.ilike(f"%{nombre_pieza}%"))
+    if en_wallapop == "si": query = query.filter(Item.en_wallapop == True)
+    if en_wallapop == "no": query = query.filter(Item.en_wallapop == False)
+    
+    piezas = query.all()
+    return templates.TemplateResponse(request=request, name="buscar_piezas.html", context={"request": request, "piezas": piezas})
+
+@app.get("/buscar_vendidos", response_class=HTMLResponse)
+def buscar_vendidos(request: Request, q: str = "", db: Session = Depends(get_db)):
+    query = db.query(Item).filter(Item.en_stock == False)
+    if q: query = query.filter(or_(Item.id.ilike(f"%{q}%"), Item.marca.ilike(f"%{q}%"), Item.modelo.ilike(f"%{q}%"), Item.nombre_pieza.ilike(f"%{q}%"), Item.numero_serie.ilike(f"%{q}%")))
+    items = query.all()
+    return templates.TemplateResponse(request=request, name="buscar_vendidos.html", context={"request": request, "items": items})
+
+@app.post("/revertir_venta/{item_id}")
+def revertir_venta(item_id: str, db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    if not item: return HTMLResponse("<h2>Item no encontrado</h2>")
+    item.en_stock = True
+    item.estado_actual = "REGISTRADO" # O el estado que desees al volver
+    item.fecha_venta = None
+    item.precio_venta = None
+    item.tipo_venta = None
+    item.numero_factura = None
+    db.commit()
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+@app.get("/qr/{item_id}")
+def generar_qr(item_id: str, request: Request):
+    img = qrcode.make(f"{request.base_url}item/{item_id}")
+    buf = io.BytesIO()
+    img.save(buf)
+    buf.seek(0)
+    return StreamingResponse(buf, media_type="image/png")
+
+@app.get("/etiqueta_aparato/{item_id}", response_class=HTMLResponse)
+def etiqueta_aparato(item_id: str, request: Request, db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    return templates.TemplateResponse(request=request, name="etiqueta_aparato.html", context={"request": request, "item": item})
+
+@app.get("/etiqueta_pieza/{item_id}", response_class=HTMLResponse)
+def etiqueta_pieza(item_id: str, request: Request, db: Session = Depends(get_db)):
+    pieza = db.query(Item).filter(Item.id == item_id).first()
+    return templates.TemplateResponse(request=request, name="etiqueta_pieza.html", context={"request": request, "pieza": pieza})
+
+@app.post("/importar_amazon")
+async def procesar_amazon(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    contents = await file.read()
+    wb = openpyxl.load_workbook(io.BytesIO(contents), data_only=True)
+    sheet = wb.active
+    mapa = {'lavadora secadora': 12, 'lavadora': 1, 'frigo': 2, 'secadora': 3, 'lavav': 4, 'horno': 5, 'arcon': 11}
+    prefijos = {1:"LAV", 2:"FRI", 3:"SEC", 4:"LAVV", 5:"HOR", 11:"ARC", 12:"LSEC"}
+    headers = [str(cell.value).upper() for cell in sheet[1]]
+    idx_tipo = headers.index('TIPO') if 'TIPO' in headers else -1
+    items = []
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        if not row[2]: continue
+        fid = None
+        if idx_tipo != -1 and row[idx_tipo]:
+            val_tipo = str(row[idx_tipo]).lower()
+            if 'lavasecadora' in val_tipo or ('lavadora' in val_tipo and 'secadora' in val_tipo): fid = 12
+            elif 'lavadora' in val_tipo: fid = 1
+            elif 'secadora' in val_tipo: fid = 3
+            elif 'frigo' in val_tipo or 'combi' in val_tipo or 'vinoteca' in val_tipo: fid = 2
+            elif 'lavav' in val_tipo: fid = 4
+            elif 'horno' in val_tipo: fid = 5
+            elif 'arcon' in val_tipo or 'congelador' in val_tipo: fid = 11
+        if fid is None:
+            desc = str(row[2]).lower()
+            fid = next((v for k,v in mapa.items() if k in desc), None)
+        id_gen = f"{prefijos.get(fid, 'AMZ')}-{str(uuid.uuid4())[:4].upper()}"
+        item = Item(id=id_gen, familia_id=fid, nombre_pieza=str(row[2])[:100], numero_serie=str(row[3]), estado_actual="PENDIENTE_CLASIFICAR", origen="AMAZON", camion=2)
+        db.add(item)
+        items.append(item)
+        qr = qrcode.make(f"{request.base_url}item/{id_gen}")
+        qr.save(f"app/static/{id_gen}.png")
+    db.commit()
+    return templates.TemplateResponse(request=request, name="etiquetas_lote.html", context={"request": request, "items": items})
+
+@app.get("/procesar_camion_2")
+async def procesar_camion_2(request: Request, db: Session = Depends(get_db)):
+    # 1. Comprobar si ya existen items del camion 2 en la base de datos
+    existentes = db.query(Item).filter(Item.camion == 2).all()
+    if existentes:
+        # Si ya existen, devolvemos las etiquetas de los que ya tenemos
+        return templates.TemplateResponse(request=request, name="etiquetas_lote.html", context={"request": request, "items": existentes})
+
+    path = "Copia de ELECTRO ILLUECA 2.xlsx"
+    if not os.path.exists(path): return HTMLResponse("Error: Excel no encontrado")
+    wb = openpyxl.load_workbook(path, data_only=True)
+    sheet = wb.active
+    mapa = {'lavadora secadora': 12, 'lavadora': 1, 'frigo': 2, 'secadora': 3, 'lavav': 4, 'horno': 5, 'arcon': 11}
+    prefijos = {1:"LAV", 2:"FRI", 3:"SEC", 4:"LAVV", 5:"HOR", 11:"ARC", 12:"LSEC"}
+    headers = [str(cell.value).upper() for cell in sheet[1]]
+    idx_tipo = headers.index('TIPO') if 'TIPO' in headers else -1
+    items = []
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        if not row[2]: continue
+        fid = None
+        if idx_tipo != -1 and row[idx_tipo]:
+            val_tipo = str(row[idx_tipo]).lower()
+            if 'lavasecadora' in val_tipo or ('lavadora' in val_tipo and 'secadora' in val_tipo): fid = 12
+            elif 'lavadora' in val_tipo: fid = 1
+            elif 'secadora' in val_tipo: fid = 3
+            elif 'frigo' in val_tipo or 'combi' in val_tipo or 'vinoteca' in val_tipo: fid = 2
+            elif 'lavav' in val_tipo: fid = 4
+            elif 'horno' in val_tipo: fid = 5
+            elif 'arcon' in val_tipo or 'congelador' in val_tipo: fid = 11
+        if fid is None:
+            desc = str(row[2]).lower()
+            fid = next((v for k,v in mapa.items() if k in desc), None)
+        id_gen = f"{prefijos.get(fid, 'AMZ')}-{str(uuid.uuid4())[:4].upper()}"
+        item = Item(id=id_gen, familia_id=fid, nombre_pieza=str(row[2])[:100], numero_serie=str(row[3]), estado_actual="PENDIENTE_CLASIFICAR", origen="AMAZON", camion=2)
+        db.add(item)
+        items.append(item)
+    db.commit()
+    return templates.TemplateResponse(request=request, name="etiquetas_lote.html", context={"request": request, "items": items})
+
+@app.get("/login", response_class=HTMLResponse)
+def login_form(request: Request):
+    return templates.TemplateResponse(request=request, name="login.html", context={"request": request})
+
+@app.post("/login")
+def login(username: str = Form(...), password: str = Form(...)):
+    if username == "admin" and password == "1234":
+        res = RedirectResponse("/panel", status_code=303)
+        res.set_cookie(key="auth", value="ok", max_age=2592000, httponly=True)
+        return res
+    return HTMLResponse("Login incorrecto")
+
+@app.post("/toggle_wallapop/{item_id}")
+def toggle_wallapop(item_id: str, db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    if not item: return HTMLResponse("<h2>Item no encontrado</h2>")
+    item.en_wallapop = not item.en_wallapop
+    db.commit()
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
+
+@app.post("/cambiar_estado_web/{item_id}")
+def cambiar_estado_web(item_id: str, nuevo_estado: str = Form(...), db: Session = Depends(get_db)):
+    item = db.query(Item).filter(Item.id == item_id).first()
+    if not item: return HTMLResponse("<h2>Item no encontrado</h2>")
+    item.estado_actual = nuevo_estado
+    db.commit()
+    return RedirectResponse(f"/item/{item_id}", status_code=303)
 
 @app.get("/vender/{item_id}", response_class=HTMLResponse)
 def vender_form(item_id: str, request: Request, db: Session = Depends(get_db)):
     item = db.query(Item).filter(Item.id == item_id).first()
-
-    if not item:
-        return HTMLResponse("<h2>Item no encontrado</h2>")
-
-    return templates.TemplateResponse("vender.html", {"request": request, "item": item})
-
+    if not item: return HTMLResponse("<h2>Item no encontrado</h2>")
+    return templates.TemplateResponse(request=request, name="vender.html", context={"request": request, "item": item})
 
 @app.post("/vender/{item_id}")
-def procesar_venta(
-    item_id: str,
-    numero_factura: str = Form(None),
-    tipo_venta: str = Form(...),
-    precio: float = Form(...),
-    db: Session = Depends(get_db),
-):
+def procesar_venta(item_id: str, numero_factura: str = Form(None), tipo_venta: str = Form(...), precio: float = Form(...), db: Session = Depends(get_db)):
     item = db.query(Item).filter(Item.id == item_id).first()
-
-    if not item:
-        return HTMLResponse("<h2>Item no encontrado</h2>")
-
+    if not item: return HTMLResponse("<h2>Item no encontrado</h2>")
     item.estado_actual = "VENDIDO"
     item.en_stock = False
     item.numero_factura = numero_factura
     item.tipo_venta = tipo_venta
     item.precio_venta = precio
     item.fecha_venta = datetime.datetime.now()
-
     db.commit()
-
     return RedirectResponse("/stock_view", status_code=303)
 
-
-@app.get("/crear_pieza/{item_id}", response_class=HTMLResponse)
-def crear_pieza_form(item_id: str, request: Request):
-    return templates.TemplateResponse(
-        "crear_pieza.html", {"request": request, "parent_id": item_id}
-    )
-
-
-import qrcode
-import os
-
-
-@app.post("/crear_pieza/{item_id}")
-def crear_pieza(
-    item_id: str,
-    nombre_pieza: str = Form(...),
-    medidas: str = Form(None),
-    db: Session = Depends(get_db),
-):
-
-    padre = db.query(Item).filter(Item.id == item_id).first()
-
-    nuevo_id = f"PZ-{str(uuid.uuid4())[:6]}"
-
-    pieza = Item(
-        id=nuevo_id,
-        nombre_pieza=nombre_pieza,
-        medidas=medidas,
-        familia_id=padre.familia_id,
-        estado_actual="REGISTRADO",
-        origen="DESPIECE",
-        parent_id=item_id,
-        en_stock=True,
-    )
-
-    db.add(pieza)
-    db.commit()
-    url = f"{request.base_url}item/{nuevo_id}"
-    qr = qrcode.make(url)
-    qr.save(f"app/static/{nuevo_id}.png")
-    url = f"https://erp-almacen.onrender.com/item/{nuevo_id}"
-
-    os.makedirs("app/static", exist_ok=True)
-
-    qr = qrcode.make(url)
-    qr.save(f"app/static/{nuevo_id}.png")
-
-    return RedirectResponse(f"/item/{item_id}", status_code=303)
-
-
-@app.get("/backup_json")
-def backup_json(db: Session = Depends(get_db)):
-
-    items = db.query(Item).all()
-
-    data = []
-
-    for i in items:
-        data.append(
-            {
-                "id": i.id,
-                "familia": i.familia.nombre if i.familia else None,
-                "serie": i.numero_serie,
-                "estado": i.estado_actual,
-                "origen": i.origen,
-                "precio_compra": i.precio_compra,
-                "albaran": i.numero_albaran,
-            }
-        )
-
-    return data
-
-
-@app.get("/buscar", response_class=HTMLResponse)
-def buscar(q: str, request: Request, db: Session = Depends(get_db)):
-
-    item = db.query(Item).filter((Item.id == q) | (Item.numero_serie == q)).first()
-
-    if item:
-        return RedirectResponse(f"/item/{item.id}", status_code=303)
-
-    return templates.TemplateResponse(
-        "panel.html", {"request": request, "error": "Artículo no encontrado"}
-    )
-
-
-@app.get("/export_csv")
-def export_csv(db: Session = Depends(get_db)):
-
-    items = db.query(Item).all()
-
-    output = io.StringIO()
-    writer = csv.writer(output)
-
-    writer.writerow(
-        [
-            "ID",
-            "Tipo",
-            "Familia",
-            "Marca",
-            "Modelo",
-            "Numero serie",
-            "Nombre pieza",
-            "Medidas",
-            "Estado",
-            "Origen",
-            "Precio compra",
-            "Precio venta",
-            "Numero albaran",
-            "Diagnostico inicial",
-            "Decision tecnica",
-            "Aparato origen",
-            "En stock",
-            "Fecha creacion",
-        ]
-    )
-
-    for i in items:
-
-        tipo = "PIEZA" if i.parent_id else "ELECTRODOMESTICO"
-
-        writer.writerow(
-            [
-                i.id,
-                tipo,
-                i.familia.nombre if i.familia else "",
-                i.marca,
-                i.modelo,
-                i.numero_serie,
-                i.nombre_pieza,
-                i.medidas,
-                i.estado_actual,
-                i.origen,
-                i.precio_compra,
-                i.precio_venta,
-                i.numero_albaran,
-                i.diagnostico_inicial,
-                i.decision_tecnica,
-                i.parent_id,
-                i.en_stock,
-                i.fecha_creacion,
-            ]
-        )
-
-    output.seek(0)
-
-    return StreamingResponse(
-        iter([output.getvalue()]),
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=almacen_completo.csv"},
-    )
-
-
-@app.get("/buscar_piezas", response_class=HTMLResponse)
-def buscar_piezas(
-    request: Request,
-    familia: str = "",
-    marca: str = "",
-    modelo: str = "",
-    nombre_pieza: str = "",
-    en_wallapop: str = "",
-    db: Session = Depends(get_db),
-):
-    query = db.query(Item)
-
-    if en_wallapop == "si":
-        query = query.filter(Item.en_wallapop == True)
-
-    if en_wallapop == "no":
-        query = query.filter(Item.en_wallapop == False)
-
-    if familia:
-        familia_obj = db.query(Familia).filter(Familia.nombre == familia).first()
-        if familia_obj:
-            query = query.filter(Item.familia_id == familia_obj.id)
-
-    if marca and marca.strip():
-        query = query.filter(func.lower(Item.marca).contains(marca.lower()))
-
-    if modelo and modelo.strip():
-        query = query.filter(func.lower(Item.modelo).contains(modelo.lower()))
-
-    if nombre_pieza and nombre_pieza.strip():
-        query = query.filter(func.lower(Item.nombre_pieza).contains(nombre_pieza.lower()))
-
-    piezas = query.all()
-
-    return templates.TemplateResponse(
-        "buscar_piezas.html",
-        {
-            "request": request,
-            "piezas": piezas
-        }
-    )
-
-
-@app.get("/crear_pieza_directa/{item_id}/{nombre}")
-def crear_pieza_directa(item_id: str, nombre: str, db: Session = Depends(get_db)):
-
-    padre = db.query(Item).filter(Item.id == item_id).first()
-    if padre.decision_tecnica == "REPARAR":
-        return HTMLResponse(
-            "<h2>Este aparato está marcado para reparación y no puede despiezarse</h2>"
-        )
-
-    if not padre:
-        return HTMLResponse("<h2>Item no encontrado</h2>")
-    if padre.decision_tecnica == "REPARAR":
-        return HTMLResponse(
-            "<h2>Este aparato está marcado para reparación y no puede despiezarse</h2>"
-        )
-
-    # 🚫 evitar despiezar piezas
-    if padre.parent_id is not None:
-        return HTMLResponse("<h2>Una pieza no puede tener subpiezas</h2>")
-
-    nuevo_id = f"PZ-{str(uuid.uuid4())[:6]}"
-
-    pieza = Item(
-        id=nuevo_id,
-        nombre_pieza=nombre,
-        familia_id=padre.familia_id,
-        estado_actual="REGISTRADO",
-        origen="DESPIECE",
-        parent_id=item_id,
-        en_stock=True,
-    )
-
-    db.add(pieza)
-    db.commit()
-
-    return RedirectResponse(f"/item/{item_id}", status_code=303)
-
-
-@app.get("/diagnostico/{item_id}", response_class=HTMLResponse)
-def diagnostico_form(item_id: str, request: Request, db: Session = Depends(get_db)):
-
-    item = db.query(Item).filter(Item.id == item_id).first()
-
-    return templates.TemplateResponse(
-        "diagnostico.html", {"request": request, "item": item}
-    )
-
-
-@app.post("/diagnostico/{item_id}")
-def guardar_diagnostico(
-    item_id: str,
-    coste: float = Form(None),
-    decision: str = Form(None),
-    db: Session = Depends(get_db),
-):
-
-    item = db.query(Item).filter(Item.id == item_id).first()
-
-    item.coste_reparacion_estimado = coste
-    item.decision_tecnica = decision
-
-    db.commit()
-
-    return RedirectResponse(f"/item/{item_id}", status_code=303)
-
-
-@app.get("/nueva_pieza", response_class=HTMLResponse)
-def nueva_pieza_form(request: Request, db: Session = Depends(get_db)):
-
-    familias = db.query(Familia).all()
-
-    return templates.TemplateResponse(
-        "nueva_pieza.html", {"request": request, "familias": familias}
-    )
-
-
-@app.post("/crear_pieza_directa")
-def crear_pieza_directa(
-    familia: str = Form(...),
-    nombre_pieza: str = Form(...),
-    medidas: str = Form(None),
-    modelo: str = Form(None),
-    marca: str = Form(...),
-    db: Session = Depends(get_db),
-):
-
-    # 🔥 1. Buscar familia
-    familia_obj = db.query(Familia).filter(Familia.nombre == familia).first()
-
-    if not familia_obj:
-        return HTMLResponse("<h2>Familia no encontrada</h2>")
-
-    # 🔥 2. Crear ID
-    nuevo_id = f"PZ-{str(uuid.uuid4())[:6]}"
-
-    # 🔥 3. Crear pieza
-    pieza = Item(
-        id=nuevo_id,
-        nombre_pieza=nombre_pieza,
-        medidas=medidas,
-        modelo=modelo,
-        marca=marca,
-        familia_id=familia_obj.id,
-        estado_actual="REGISTRADO",
-        origen="STOCK_ANTIGUO",
-        en_stock=True,
-    )
-
-    db.add(pieza)
-    db.commit()
-
-    return RedirectResponse(f"/item/{nuevo_id}", status_code=303)
-
-
 @app.post("/precio/{item_id}")
-def actualizar_precio(
-    item_id: str, precio: float = Form(...), db: Session = Depends(get_db)
-):
-
+def actualizar_precio(item_id: str, precio: float = Form(...), db: Session = Depends(get_db)):
     item = db.query(Item).filter(Item.id == item_id).first()
-
-    item.precio_venta = precio
-
-    db.commit()
-
+    if item:
+        item.precio_venta = precio
+        db.commit()
     return RedirectResponse(f"/item/{item_id}", status_code=303)
-
-
-@app.get("/print_qr/{item_id}", response_class=HTMLResponse)
-def print_qr(item_id: str, request: Request, db: Session = Depends(get_db)):
-
-    item = db.query(Item).filter(Item.id == item_id).first()
-
-    return templates.TemplateResponse(
-        "print_qr.html", {"request": request, "item": item}
-    )
-
-
-@app.get("/print_pieza/{item_id}", response_class=HTMLResponse)
-def print_pieza(item_id: str, request: Request, db: Session = Depends(get_db)):
-
-    pieza = db.query(Item).filter(Item.id == item_id).first()
-
-    return templates.TemplateResponse(
-        "print_pieza.html", {"request": request, "pieza": pieza}
-    )
-
-
-import qrcode
-import io
-from fastapi.responses import StreamingResponse
-
-
-@app.get("/qr/{item_id}")
-def generar_qr(item_id: str, request: Request):
-
-    url = str(request.base_url) + "item/" + item_id
-
-    img = qrcode.make(url)
-
-    buf = io.BytesIO()
-    img.save(buf)
-    buf.seek(0)
-
-    return StreamingResponse(buf, media_type="image/png")
-
-
-@app.get("/buscar_piezas_avanzado", response_class=HTMLResponse)
-def buscar_piezas_avanzado(
-    request: Request,
-    familia_id: int = None,
-    modelo: str = "",
-    nombre_pieza: str = "",
-    db: Session = Depends(get_db),
-):
-
-    query = db.query(Item).filter(Item.parent_id != None)
-
-    if familia_id:
-        query = query.filter(Item.familia_id == familia_id)
-
-    if modelo:
-        query = query.filter(Item.modelo.ilike(f"%{modelo}%"))
-
-    if nombre_pieza:
-        query = query.filter(Item.nombre_pieza.ilike(f"%{nombre_pieza}%"))
-
-    piezas = query.all()
-
-    familias = db.query(Familia).all()
-
-    return templates.TemplateResponse(
-        "buscar_piezas.html",
-        {"request": request, "piezas": piezas, "familias": familias},
-    )
-
-
-from sqlalchemy import or_
-
-
-@app.get("/buscar_aparatos", response_class=HTMLResponse)
-def buscar_aparatos(
-    request: Request,
-    q: str = "",
-    familia_id: int = None,
-    estado: str = "",
-    db: Session = Depends(get_db),
-):
-    # 🔥 SOLO APARATOS (NO piezas)
-    query = db.query(Item).filter(Item.parent_id == None)
-
-
-    # 🔥 BUSCADOR GENERAL (ID + todo)
-    if q:
-        query = query.filter(
-            or_(
-                Item.id.ilike(f"%{q}%"),
-                Item.marca.ilike(f"%{q}%"),
-                Item.modelo.ilike(f"%{q}%"),
-            )
-        )
-
-
-    if familia_id:
-        query = query.filter(Item.familia_id == familia_id)
-
-
-    if estado:
-        query = query.filter(Item.estado_actual == estado)
-
-
-    aparatos = query.all()
-    familias = db.query(Familia).all()
-
-
-    return templates.TemplateResponse(
-        "buscar_aparatos.html",
-        {
-            "request": request,
-            "aparatos": aparatos,
-            "familias": familias,
-        },
-    )
-
-
-from sqlalchemy import or_
-
-
-@app.get("/buscar_piezas", response_class=HTMLResponse)
-def buscar_piezas(
-    request: Request,
-    q: str = "",
-    marca: str = "",
-    modelo: str = "",
-    nombre_pieza: str = "",
-    db: Session = Depends(get_db),
-):
-    # 🔥 SOLO PIEZAS
-    query = db.query(Item).filter(Item.parent_id != None)
-
-
-    # 🔥 BUSCADOR GENERAL
-    if q:
-        query = query.filter(
-            or_(
-                Item.id.ilike(f"%{q}%"),
-                Item.marca.ilike(f"%{q}%"),
-                Item.modelo.ilike(f"%{q}%"),
-                Item.nombre_pieza.ilike(f"%{q}%"),
-            )
-        )
-
-
-    if marca:
-        query = query.filter(Item.marca.ilike(f"%{marca}%"))
-
-
-    if modelo:
-        query = query.filter(Item.modelo.ilike(f"%{modelo}%"))
-
-
-    if nombre_pieza:
-        query = query.filter(Item.nombre_pieza.ilike(f"%{nombre_pieza}%"))
-
-
-    piezas = query.all()
-
-
-    return templates.TemplateResponse(
-        "buscar_piezas.html",
-        {
-            "request": request,
-            "piezas": piezas,
-        }
-    )
-
-
-@app.get("/piezas_por_familia/{familia}")
-def piezas_por_familia(familia: str):
-
-    piezas = PIEZAS_POR_FAMILIA.get(familia, [])
-
-    return [p["nombre"] for p in piezas]
-
-
-@app.get("/etiqueta_pieza/{item_id}", response_class=HTMLResponse)
-def etiqueta_pieza(item_id: str, request: Request, db: Session = Depends(get_db)):
-
-    pieza = db.query(Item).filter(Item.id == item_id).first()
-
-    return templates.TemplateResponse(
-        "etiqueta_pieza.html", {"request": request, "pieza": pieza}
-    )
-
-
-@app.get("/etiqueta_aparato/{item_id}", response_class=HTMLResponse)
-def etiqueta_aparato(item_id: str, request: Request, db: Session = Depends(get_db)):
-
-    item = db.query(Item).filter(Item.id == item_id).first()
-
-    return templates.TemplateResponse(
-        "etiqueta_aparato.html", {"request": request, "item": item}
-    )
-
-
-@app.get("/etiqueta_pieza/{item_id}", response_class=HTMLResponse)
-def etiqueta_pieza(item_id: str, request: Request, db: Session = Depends(get_db)):
-
-    pieza = db.query(Item).filter(Item.id == item_id).first()
-
-    return templates.TemplateResponse(
-        "etiqueta_pieza.html", {"request": request, "pieza": pieza}
-    )
-
-
-from fastapi import UploadFile, File
-
-import requests
-
-
-from typing import List
-
-
-@app.post("/subir_imagen/{item_id}")
-async def subir_imagen(
-    item_id: str,
-    files: List[UploadFile] = File(...),
-    db: Session = Depends(get_db)
-):
-    fotos_existentes = db.query(Imagen).filter(Imagen.item_id == item_id).count()
-    if fotos_existentes >= 5:
-        return {"error": "Máximo 5 fotos por artículo"}
-    for file in files:
-        if fotos_existentes >= 5:
-            break
-        numero = fotos_existentes + 1
-        filename = f"{item_id}_{numero}.jpg"
-        contenido = await file.read()
-        contenido_comprimido = optimizar_imagen(contenido)
-        url = f"{SUPABASE_URL}/storage/v1/object/imagenes/{filename}"
-        headers = {
-            "apikey": SUPABASE_KEY,
-            "Authorization": f"Bearer {SUPABASE_KEY}",
-            "Content-Type": "image/jpeg",
-        }
-        response = requests.put(url, headers=headers, data=contenido_comprimido)
-        if response.status_code in [200, 201]:
-            public_url = f"{SUPABASE_URL}/storage/v1/object/public/imagenes/{filename}"
-            imagen = Imagen(item_id=item_id, url=public_url, orden=numero)
-
-            db.add(imagen)
-            db.commit()
-
-            fotos_existentes += 1
-
-
-    return RedirectResponse(f"/item/{item_id}", status_code=303)
-
-@app.get("/imagenes/{item_id}", response_class=HTMLResponse)
-def ver_imagenes(item_id: str, request: Request, db: Session = Depends(get_db)):
-
-    fotos = db.query(Imagen).filter(Imagen.item_id == item_id).all()
-
-    return templates.TemplateResponse(
-        "imagenes.html", {"request": request, "fotos": fotos, "item_id": item_id}
-    )
-
-
-@app.post("/borrar_imagen/{imagen_id}")
-def borrar_imagen(imagen_id: int, db: Session = Depends(get_db)):
-
-    imagen = db.query(Imagen).filter(Imagen.id == imagen_id).first()
-
-    filename = imagen.url.split("/")[-1]
-
-
-    db.delete(imagen)
-    db.commit()
-
-    return {"ok": True}
-
-
-@app.post("/actualizar_diagnostico/{item_id}")
-def actualizar_diagnostico(
-    item_id: str, diagnostico: str = Form(...), db: Session = Depends(get_db)
-):
-
-    item = db.query(Item).filter(Item.id == item_id).first()
-
-    if not item:
-        return HTMLResponse("<h2>Item no encontrado</h2>")
-
-    # guardar historial
-    historial = HistorialDiagnostico(item_id=item_id, diagnostico=diagnostico)
-
-    db.add(historial)
-
-    # actualizar diagnóstico actual
-    item.diagnostico_inicial = diagnostico
-
-    db.commit()
-
-    return RedirectResponse(f"/item/{item_id}", status_code=303)
-
-
-@app.post("/actualizar_diagnostico/{item_id}")
-def actualizar_diagnostico(
-    item_id: str, diagnostico: str = Form(...), db: Session = Depends(get_db)
-):
-
-    item = db.query(Item).filter(Item.id == item_id).first()
-
-    if not item:
-        return HTMLResponse("<h2>Item no encontrado</h2>")
-
-    item.diagnostico_inicial = diagnostico
-    db.commit()
-
-    return RedirectResponse(f"/item/{item_id}", status_code=303)
-
-
-from fastapi.responses import HTMLResponse
-from fastapi import Request, Depends
-from sqlalchemy.orm import Session
-
-def optimizar_imagen(imagen_bytes):
-    from PIL import Image
-    import io
-
-    img = Image.open(io.BytesIO(imagen_bytes))
-
-    # Convertir a RGB (muy importante)
-    if img.mode != "RGB":
-        img = img.convert("RGB")
-
-    # REDUCIR TAMAÑO (CLAVE)
-    img.thumbnail((800, 800))
-
-    output = io.BytesIO()
-
-    # COMPRESIÓN FUERTE (CLAVE)
-    img.save(output, format="JPEG", quality=60, optimize=True)
-
-    return output.getvalue()
 
 @app.post("/eliminar_item/{item_id}")
-def eliminar_item(
-    item_id: str,
-    password: str = Form(...),
-    db: Session = Depends(get_db),
-):
-
-    PASSWORD_ADMIN = "3539"  # 🔥 cámbiala
-
+def eliminar_item(item_id: str, password: str = Form(...), db: Session = Depends(get_db)):
+    PASSWORD_ADMIN = "3539"
     if password != PASSWORD_ADMIN:
-        return HTMLResponse("<h2>Contraseña incorrecta</h2>")
-
+        return HTMLResponse("<h2>ContraseÃ±a incorrecta</h2>")
     item = db.query(Item).filter(Item.id == item_id).first()
-
-    if not item:
-        return HTMLResponse("<h2>Item no encontrado</h2>")
-
-    # eliminar también imágenes
-    db.query(Imagen).filter(Imagen.item_id == item_id).delete()
-
-    db.delete(item)
-    db.commit()
-
+    if item:
+        db.query(Imagen).filter(Imagen.item_id == item_id).delete()
+        db.delete(item)
+        db.commit()
     return RedirectResponse("/panel", status_code=303)
 
-@app.post("/toggle_wallapop/{item_id}")
-def toggle_wallapop(item_id: str, db: Session = Depends(get_db)):
-    item = db.query(Item).filter(Item.id == item_id).first()
+
+# --- COMPATIBILIDAD ---
+MARCAS_CONOCIDAS = ["Bosch", "Siemens", "Balay", "Neff", "Constructa", "Fagor", "Edesa", "Aspes",
+    "LG", "Samsung", "Whirlpool", "Beko", "Indesit", "Ariston", "Candy", "Hoover", "Zanussi",
+    "Electrolux", "AEG", "Miele", "Teka", "Corbero", "Otsein", "Haier", "Hisense",
+    "Brandt", "Pitsos", "Blaupunkt", "Gaggenau", "Thermador", "Junkers", "Lynx",
+    "Cata", "Nodor", "Smeg", "Liebherr", "Gorenje", "ATAG", "Kenmore"]
+
+TIPOS_ELECTRO = {
+    "lavadora": ["Lavadora"], "washing": ["Lavadora"],
+    "lavavajillas": ["Lavavajillas"], "dishwasher": ["Lavavajillas"],
+    "secadora": ["Secadora"], "dryer": ["Secadora"],
+    "frigorifico": ["Frigorífico"], "fridge": ["Frigorífico"], "refrigerador": ["Frigorífico"],
+    "horno": ["Horno"], "oven": ["Horno"],
+    "microondas": ["Microondas"],
+    "campana": ["Campana extractora"],
+    "vitroceramica": ["Vitroceramica", "Placa de Induccion"],
+    "induccion": ["Placa de Induccion"],
+}
+
+TIPOS_PIEZA = {
+    "bomba desague": "Bomba desagüe", "bomba de drenaje": "Bomba desagüe", "drain pump": "Bomba desagüe",
+    "bomba desag": "Bomba desagüe",
+    "resistencia": "Resistencia", "heating element": "Resistencia",
+    "motor": "Motor",
+    "placa electronica": "Placa electrónica", "placa electr": "Placa electrónica", "pcb": "Placa electrónica",
+    "modulo electronico": "Placa electrónica", "control board": "Placa electrónica",
+    "blocapuertas": "Blocapuertas", "door lock": "Blocapuertas", "cierre puerta": "Blocapuertas",
+    "electrovalvula": "Electroválvula", "electrov": "Electroválvula", "inlet valve": "Electroválvula",
+    "presostato": "Presostato", "pressure switch": "Presostato",
+    "puerta": "Puerta", "door": "Puerta",
+    "goma escotilla": "Goma escotilla", "junta puerta": "Goma escotilla", "door seal": "Goma escotilla",
+    "junta": "Goma escotilla",
+    "bomba lavado": "Bomba lavado", "wash pump": "Bomba lavado", "bomba de lavado": "Bomba lavado",
+    "cesta superior": "Cesta superior", "cesto superior": "Cesta superior", "upper basket": "Cesta superior",
+    "cesta inferior": "Cesta inferior", "cesto inferior": "Cesta inferior", "lower basket": "Cesta inferior",
+    "termostato": "Termostato", "thermostat": "Termostato",
+    "ventilador": "Ventilador", "fan": "Ventilador",
+    "compresor": "Compresor", "compressor": "Compresor",
+    "cajon detergente": "Cajón detergente", "detergent drawer": "Cajón detergente",
+    "bandeja": "Bandeja", "tray": "Bandeja",
+    "estante": "Estante cristal", "shelf": "Estante cristal",
+    "botonera": "Botonera", "button panel": "Botonera",
+    "jabonera": "Jabonera", "soap dispenser": "Jabonera",
+    "aquastop": "Aquastop",
+    "correa": "Correa", "belt": "Correa",
+    "maneta": "Maneta puerta", "handle": "Maneta puerta",
+    "sonda": "Sonda temperatura", "sensor": "Sonda temperatura",
+    "tapa superior": "Tapa superior", "top cover": "Tapa superior",
+    "selector": "Selector",
+    "manillera": "Manillera",
+}
+
+def buscar_compatibilidad_web(codigo):
+    """Busca un código de pieza en la web usando Serper.dev (Google Search API)."""
+    import os, json as json_mod
+    api_key = os.getenv("SERPER_API_KEY", "")
+    if not api_key:
+        return None, "No se ha configurado la API key de Serper. Regístrate gratis en serper.dev y añade SERPER_API_KEY al archivo .env"
+    
+    try:
+        headers = {
+            "X-API-KEY": api_key,
+            "Content-Type": "application/json"
+        }
+        payload = json_mod.dumps({
+            "q": f'"{codigo}" recambio electrodoméstico compatible',
+            "gl": "es",
+            "hl": "es",
+            "num": 8
+        })
+        r = requests.post("https://google.serper.dev/search", headers=headers, data=payload, timeout=15)
+        
+        if r.status_code == 401:
+            return None, "API key de Serper inválida. Verifica tu SERPER_API_KEY en .env"
+        if r.status_code == 429:
+            return None, "Se ha superado el límite de búsquedas. Inténtalo más tarde."
+        if r.status_code != 200:
+            return None, f"Error en la búsqueda web (código {r.status_code})"
+        
+        data = r.json()
+        results = data.get("organic", [])
+        
+        if not results:
+            return None, f"No se encontraron resultados para el código '{codigo}'"
+        
+        # Extraer info de los snippets
+        info = {"codigo_original": codigo, "tipo_pieza": None, "tipo_electrodomestico": None, "marcas": set()}
+        web_results = []
+        
+        all_text = ""
+        for result in results:
+            title = result.get("title", "")
+            snippet = result.get("snippet", "")
+            url = result.get("link", "")
+            all_text += f" {title} {snippet} "
+            web_results.append({"title": title, "snippet": snippet, "url": url})
+        
+        all_text_lower = all_text.lower()
+        
+        # Detectar tipo de pieza
+        for keyword, pieza_name in TIPOS_PIEZA.items():
+            if keyword in all_text_lower:
+                info["tipo_pieza"] = pieza_name
+                break
+        
+        # Detectar tipo de electrodoméstico
+        for keyword, electro_names in TIPOS_ELECTRO.items():
+            if keyword in all_text_lower:
+                info["tipo_electrodomestico"] = electro_names[0]
+                break
+        
+        # Detectar marcas
+        for marca in MARCAS_CONOCIDAS:
+            if marca.lower() in all_text_lower:
+                info["marcas"].add(marca)
+        
+        info["marcas"] = sorted(list(info["marcas"]))
+        
+        return {"info": info, "web_results": web_results}, None
+        
+    except requests.exceptions.Timeout:
+        return None, "La búsqueda web tardó demasiado. Inténtalo de nuevo."
+    except Exception as e:
+        return None, f"Error inesperado: {str(e)}"
 
 
-    if not item:
-        return HTMLResponse("<h2>Item no encontrado</h2>")
+def buscar_piezas_compatibles(db, info_pieza):
+    """Busca en el inventario piezas que puedan ser compatibles."""
+    query = db.query(Item).filter(Item.nombre_pieza != None, Item.en_stock == True)
+    
+    conditions = []
+    
+    # Filtrar por tipo de pieza si lo conocemos
+    if info_pieza.get("tipo_pieza"):
+        conditions.append(Item.nombre_pieza.ilike(f"%{info_pieza['tipo_pieza']}%"))
+    
+    # Filtrar por tipo de electrodoméstico
+    if info_pieza.get("tipo_electrodomestico"):
+        familia = db.query(Familia).filter(Familia.nombre.ilike(f"%{info_pieza['tipo_electrodomestico']}%")).first()
+        if familia:
+            query = query.filter(Item.familia_id == familia.id)
+    
+    # Si tenemos tipo de pieza, filtrar por ella
+    if conditions:
+        query = query.filter(or_(*conditions))
+    
+    # Si tenemos marcas compatibles, priorizar pero no excluir
+    piezas = query.all()
+    
+    # Ordenar: primero las que coinciden en marca
+    marcas_lower = [m.lower() for m in info_pieza.get("marcas", [])]
+    def sort_key(p):
+        marca_match = 0
+        if p.marca and p.marca.lower() in marcas_lower:
+            marca_match = 1
+        return -marca_match
+    
+    piezas.sort(key=sort_key)
+    return piezas
 
 
-    item.en_wallapop = not item.en_wallapop
-    db.commit()
+@app.get("/compatibilidad", response_class=HTMLResponse)
+def compatibilidad_form(request: Request):
+    return templates.TemplateResponse(request=request, name="compatibilidad.html", context={"request": request})
+
+@app.get("/buscar_compatibilidad", response_class=HTMLResponse)
+def buscar_compatibilidad(request: Request, codigo: str = "", db: Session = Depends(get_db)):
+    if not codigo.strip():
+        return templates.TemplateResponse(request=request, name="compatibilidad.html", 
+            context={"request": request, "error": "Introduce un código de pieza"})
+    
+    codigo = codigo.strip()
+    resultado, error = buscar_compatibilidad_web(codigo)
+    
+    if error:
+        return templates.TemplateResponse(request=request, name="compatibilidad.html",
+            context={"request": request, "codigo": codigo, "error": error})
+    
+    info_pieza = resultado["info"]
+    web_results = resultado["web_results"]
+    piezas_stock = buscar_piezas_compatibles(db, info_pieza)
+    
+    return templates.TemplateResponse(request=request, name="compatibilidad.html",
+        context={
+            "request": request,
+            "codigo": codigo,
+            "info_pieza": info_pieza,
+            "resultados_web": web_results,
+            "piezas_stock": piezas_stock
+        })
 
 
-    return RedirectResponse(f"/item/{item_id}", status_code=303)
-
-# ---------------- LOGIN CONFIG ----------------
-from fastapi import Request, Form, HTTPException
-from fastapi.responses import RedirectResponse, HTMLResponse
-
-
-USUARIO = "admin"
-PASSWORD = "1234"  # 🔥 cámbiala
-
-
-# ---------------- LOGIN ----------------
-@app.get("/login", response_class=HTMLResponse)
-def login_form(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
-
-
-
-
-@app.post("/login")
-def login(username: str = Form(...), password: str = Form(...)):
-    if username == USUARIO and password == PASSWORD:
-        response = RedirectResponse("/panel", status_code=303)
-
-
-        response.set_cookie(
-            key="auth",
-            value="ok",
-            max_age=60 * 60 * 24 * 30,  # 30 días
-            httponly=True
-        )
-
-
-        return response
-
-
-    return HTMLResponse("<h2>Login incorrecto</h2>")
-
-
-
-
-# ---------------- LOGOUT ----------------
-@app.get("/logout")
-def logout():
-    response = RedirectResponse("/login")
-    response.delete_cookie("auth")
-    return response
-
-
-
-
-# ---------------- MIDDLEWARE SEGURIDAD ----------------
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
-
-
-    rutas_publicas = [
-        "/login",
-        "/static",
-        "/etiqueta_pieza",
-        "/etiqueta_aparato",
-        "/qr",  # para QR
-    ]
-
-
-    # permitir rutas públicas
-    if any(request.url.path.startswith(r) for r in rutas_publicas):
-        return await call_next(request)
-
-
-    # comprobar cookie
-    if request.cookies.get("auth") != "ok":
-        return RedirectResponse("/login")
-
-
+    if any(request.url.path.startswith(r) for r in ["/login", "/static", "/qr", "/imagenes", "/etiqueta"]): return await call_next(request)
+    if request.cookies.get("auth") != "ok": return RedirectResponse("/login")
     return await call_next(request)

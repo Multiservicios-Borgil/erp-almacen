@@ -116,11 +116,23 @@ Crear pieza
 </button>
 </a>
 
-<a href="/vender/{{item.id}}">
-<button style="width:100%;padding:18px;margin-top:10px">
-Vender
-</button>
-</a>
+{% if item.en_stock %}
+    <a href="/vender/{{item.id}}">
+    <button style="width:100%;padding:18px;margin-top:10px; background:#28a745; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">
+    💰 Vender Artículo
+    </button>
+    </a>
+{% else %}
+    <div style="background:#fff3cd; padding:20px; border-radius:10px; border: 2px solid #ffeeba; margin-top:15px; text-align:center;">
+        <h3 style="color:#856404; margin-top:0;">🛑 ARTÍCULO VENDIDO</h3>
+        <p>Este artículo no está en stock porque fue vendido.</p>
+        <form method="post" action="/revertir_venta/{{item.id}}">
+            <button type="submit" style="width:100%; padding:15px; background:#dc3545; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">
+            🔙 Devolución / Volver a Stock
+            </button>
+        </form>
+    </div>
+{% endif %}
 
 {% if item.parent_id %}
 <h3 style="margin-top:30px">Información de la pieza</h3>
@@ -157,39 +169,48 @@ Vender
 {% endfor %}
 {% endif %}
 
-<h3 style="margin-top:30px">Cambiar Estado</h3>
+{% if item.en_stock %}
+<h3 style="margin-top:30px">Clasificación Comercial</h3>
 
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="FUNCIONA">FUNCIONA</button>
-</form>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+    <form method="post" action="/cambiar_estado_web/{{item.id}}">
+        <button type="submit" name="nuevo_estado" value="NUEVO A ESTRENAR" style="background:#28a745; color:white; width:100%; padding:15px; border:none; border-radius:8px; cursor:pointer;">NUEVO A ESTRENAR</button>
+    </form>
 
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="ESTROPEADO">ESTROPEADO</button>
-</form>
+    <form method="post" action="/cambiar_estado_web/{{item.id}}">
+        <button type="submit" name="nuevo_estado" value="NUEVO GRADO A" style="background:#28a745; color:white; width:100%; padding:15px; border:none; border-radius:8px; cursor:pointer;">NUEVO GRADO A</button>
+    </form>
 
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="REPARADO">REPARADO</button>
-</form>
+    <form method="post" action="/cambiar_estado_web/{{item.id}}">
+        <button type="submit" name="nuevo_estado" value="NUEVO GRADO B" style="background:#ffc107; color:black; width:100%; padding:15px; border:none; border-radius:8px; cursor:pointer;">NUEVO GRADO B</button>
+    </form>
 
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="VENTA_SEGUNDA_MANO">VENTA SEGUNDA MANO</button>
-</form>
+    <form method="post" action="/cambiar_estado_web/{{item.id}}">
+        <button type="submit" name="nuevo_estado" value="NUEVO GRADO C" style="background:#ffc107; color:black; width:100%; padding:15px; border:none; border-radius:8px; cursor:pointer;">NUEVO GRADO C</button>
+    </form>
 
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="VENTA_REACONDICIONADO">VENTA REACONDICIONADO</button>
-</form>
+    <form method="post" action="/cambiar_estado_web/{{item.id}}">
+        <button type="submit" name="nuevo_estado" value="REACONDICIONADO" style="background:#17a2b8; color:white; width:100%; padding:15px; border:none; border-radius:8px; cursor:pointer;">REACONDICIONADO</button>
+    </form>
 
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="VENTA_NUEVO">VENTA NUEVO</button>
-</form>
+    <form method="post" action="/cambiar_estado_web/{{item.id}}">
+        <button type="submit" name="nuevo_estado" value="SEGUNDA MANO" style="background:#6c757d; color:white; width:100%; padding:15px; border:none; border-radius:8px; cursor:pointer;">SEGUNDA MANO</button>
+    </form>
+</div>
 
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="PREPARAR_GOLPEADO_VENTA_NUEVO">GOLPEADO VENTA NUEVO</button>
-</form>
-
-<form method="post" action="/cambiar_estado_web/{{item.id}}">
-<button type="submit" name="nuevo_estado" value="PREPARAR_GOLPEADO_REACONDICIONADO">GOLPEADO REACONDICIONADO</button>
-</form>
+<h3 style="margin-top:20px">Estados Técnicos</h3>
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+    <form method="post" action="/cambiar_estado_web/{{item.id}}">
+        <button type="submit" name="nuevo_estado" value="FUNCIONA" style="width:100%; padding:10px;">FUNCIONA</button>
+    </form>
+    <form method="post" action="/cambiar_estado_web/{{item.id}}">
+        <button type="submit" name="nuevo_estado" value="ESTROPEADO" style="width:100%; padding:10px;">ESTROPEADO</button>
+    </form>
+    <form method="post" action="/cambiar_estado_web/{{item.id}}">
+        <button type="submit" name="nuevo_estado" value="REPARADO" style="width:100%; padding:10px;">REPARADO</button>
+    </form>
+</div>
+{% endif %}
 
 <div style="margin-top:30px; padding:15px; background:#f8d7da; border-radius:10px;">
 <h3 style="color:red;">Zona peligrosa</h3>

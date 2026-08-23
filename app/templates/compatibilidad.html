@@ -1,0 +1,89 @@
+﻿{% extends "base.html" %}
+{% block title %}Buscar Compatibilidades{% endblock %}
+{% block content %}
+
+<h2>🔍 Buscar Compatibilidades</h2>
+<p style="color:#666; font-size:14px;">Introduce el código de referencia de la pieza que te pide el cliente para buscar compatibilidades en webs de recambios y cruzar con tu inventario.</p>
+
+<form method="get" action="/buscar_compatibilidad" id="formCompat">
+    <input 
+        type="text" 
+        name="codigo" 
+        placeholder="Código de pieza (ej: 00611332)"
+        value="{{ codigo or '' }}"
+        style="width:100%;padding:14px;margin-bottom:10px;font-size:16px;border:2px solid #2c7be5;border-radius:8px;"
+        required>
+    
+    <button type="submit" style="width:100%;padding:14px;background:#2c7be5;color:white;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;" id="btnBuscar">
+        🔍 Buscar en la web y en inventario
+    </button>
+</form>
+
+{% if error %}
+<div style="background:#f8d7da;color:#721c24;padding:15px;border-radius:8px;margin-top:15px;">
+    ⚠️ {{ error }}
+</div>
+{% endif %}
+
+{% if info_pieza %}
+<hr style="margin:25px 0;">
+
+<!-- INFO DE LA PIEZA -->
+<div style="background:#d4edda;padding:20px;border-radius:10px;margin-bottom:15px;">
+    <h3 style="margin-top:0;color:#155724;">📋 Información encontrada</h3>
+    
+    {% if info_pieza.tipo_pieza %}
+    <p><strong>Tipo de pieza:</strong> {{ info_pieza.tipo_pieza }}</p>
+    {% endif %}
+    
+    {% if info_pieza.tipo_electrodomestico %}
+    <p><strong>Electrodoméstico:</strong> {{ info_pieza.tipo_electrodomestico }}</p>
+    {% endif %}
+    
+    {% if info_pieza.marcas %}
+    <p><strong>Marcas compatibles:</strong> {{ info_pieza.marcas | join(', ') }}</p>
+    {% endif %}
+    
+    {% if info_pieza.codigo_original %}
+    <p><strong>Código original:</strong> {{ info_pieza.codigo_original }}</p>
+    {% endif %}
+</div>
+
+<!-- RESULTADOS WEB -->
+{% if resultados_web %}
+<div style="background:#fff3cd;padding:20px;border-radius:10px;margin-bottom:15px;">
+    <h3 style="margin-top:0;color:#856404;">🌐 Fuentes web</h3>
+    {% for r in resultados_web %}
+    <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #ffc107;">
+        <a href="{{ r.url }}" target="_blank" style="font-weight:bold;color:#0056b3;">{{ r.title }}</a>
+        <p style="font-size:13px;color:#666;margin:5px 0 0;">{{ r.snippet }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- PIEZAS EN STOCK -->
+{% if piezas_stock %}
+<div style="background:#cce5ff;padding:20px;border-radius:10px;margin-bottom:15px;">
+    <h3 style="margin-top:0;color:#004085;">✅ Piezas en tu inventario ({{ piezas_stock | length }})</h3>
+    {% for p in piezas_stock %}
+    <div style="background:white;padding:12px;margin:8px 0;border-radius:8px;border-left:4px solid #28a745;">
+        <strong>{{ p.nombre_pieza }}</strong><br>
+        {% if p.marca %}Marca: {{ p.marca }}<br>{% endif %}
+        {% if p.modelo %}Modelo: {{ p.modelo }}<br>{% endif %}
+        {% if p.medidas %}Medidas: {{ p.medidas }}<br>{% endif %}
+        ID: {{ p.id }}<br>
+        <a href="/item/{{ p.id }}" style="color:#2c7be5;font-weight:bold;">Ver ficha →</a>
+    </div>
+    {% endfor %}
+</div>
+{% elif info_pieza %}
+<div style="background:#f8d7da;padding:20px;border-radius:10px;margin-bottom:15px;">
+    <h3 style="margin-top:0;color:#721c24;">❌ No se encontraron piezas compatibles en tu inventario</h3>
+    <p>No tienes ninguna pieza de tipo <strong>{{ info_pieza.tipo_pieza or 'desconocido' }}</strong> en stock que pueda coincidir.</p>
+</div>
+{% endif %}
+
+{% endif %}
+
+{% endblock %}
