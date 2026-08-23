@@ -9,6 +9,8 @@ from sqlalchemy import func, or_
 import csv, io, datetime, uuid, qrcode, os, requests, openpyxl
 from typing import List
 from PIL import Image
+from dotenv import load_dotenv
+load_dotenv()
 from .database import SessionLocal, engine
 from .models import Base, Item, Familia, Imagen, HistorialDiagnostico
 
@@ -461,43 +463,52 @@ TIPOS_PIEZA = {
 }
 
 def buscar_compatibilidad_web(codigo):
-    """Busca un código de pieza en la web usando Serper.dev (Google Search API)."""
+    """Busca un código de pieza o modelo en la web usando Serper.dev."""
     import os, json as json_mod
-    api_key = os.getenv("SERPER_API_KEY", "")
+    api_key = os.getenv("SERPER_API_KEY", "").strip()
     if not api_key:
-        return None, "No se ha configurado la API key de Serper. Regístrate gratis en serper.dev y añade SERPER_API_KEY al archivo .env"
+        return None, "No se ha configurado la API key de Serper. Añade SERPER_API_KEY en tu .env o en el panel de Render."
     
     try:
         headers = {
             "X-API-KEY": api_key,
             "Content-Type": "application/json"
         }
+        
+        # Consulta limpia y flexible
+        q_term = codigo.strip()
+        if len(q_term.split()) == 1 and any(c.isdigit() for c in q_term):
+            # Es un código de referencia (ej: 00611332)
+            query_str = f'"{q_term}" recambio OR repuesto OR compatible'
+        else:
+            # Es un modelo o nombre de aparato (ej: Zanussi Lindo)
+            query_str = f'{q_term} recambio repuesto piezas'
+            
         payload = json_mod.dumps({
-            "q": f'"{codigo}" recambio electrodoméstico compatible',
+            "q": query_str,
             "gl": "es",
             "hl": "es",
-            "num": 8
+            "num": 10
         })
         r = requests.post("https://google.serper.dev/search", headers=headers, data=payload, timeout=15)
         
-        if r.status_code == 401:
-            return None, "API key de Serper inválida. Verifica tu SERPER_API_KEY en .env"
-        if r.status_code == 429:
-            return None, "Se ha superado el límite de búsquedas. Inténtalo más tarde."
-        if r.status_code != 200:
-            return None, f"Error en la búsqueda web (código {r.status_code})"
-        
         data = r.json()
+        if r.status_code in [401, 403] or data.get("statusCode") in [401, 403]:
+            return None, "API Key de Serper no autorizada. Entra en serper.dev, verifica tu email y copia tu API Key del dashboard."
+            
+        if r.status_code == 429:
+            return None, "Límite de consultas gratuitas de Serper alcanzado temporalmente."
+            
+        if r.status_code != 200:
+            return None, f"Error en el servidor de búsqueda (código {r.status_code})"
+        
         results = data.get("organic", [])
         
-        if not results:
-            return None, f"No se encontraron resultados para el código '{codigo}'"
-        
-        # Extraer info de los snippets
+        # Info básica detectada
         info = {"codigo_original": codigo, "tipo_pieza": None, "tipo_electrodomestico": None, "marcas": set()}
         web_results = []
         
-        all_text = ""
+        all_text = f" {codigo} "
         for result in results:
             title = result.get("title", "")
             snippet = result.get("snippet", "")
@@ -532,7 +543,6 @@ def buscar_compatibilidad_web(codigo):
         return None, "La búsqueda web tardó demasiado. Inténtalo de nuevo."
     except Exception as e:
         return None, f"Error inesperado: {str(e)}"
-
 
 def buscar_piezas_compatibles(db, info_pieza):
     """Busca en el inventario piezas que puedan ser compatibles."""
